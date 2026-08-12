@@ -1,0 +1,107 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap");
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+  background: #f4f8fb;
+}
+
+.dark {
+  color-scheme: dark;
+  background: #101826;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  color: #152033;
+  background:
+    radial-gradient(circle at 14% 12%, rgba(114, 212, 239, 0.18), transparent 28%),
+    radial-gradient(circle at 86% 2%, rgba(232, 75, 95, 0.12), transparent 26%),
+    linear-gradient(135deg, #f7fbff 0%, #eef5f9 48%, #f8fafc 100%);
+}
+
+.dark body {
+  color: #edf6fb;
+  background:
+    radial-gradient(circle at 12% 10%, rgba(114, 212, 239, 0.16), transparent 28%),
+    radial-gradient(circle at 90% 4%, rgba(232, 75, 95, 0.16), transparent 24%),
+    linear-gradient(135deg, #101826 0%, #122235 55%, #171b28 100%);
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid rgba(10, 146, 200, 0.55);
+  outline-offset: 3px;
+}
+
+.glass-panel {
+  background: rgba(255, 255, 255, 0.76);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(24px);
+  box-shadow: 0 24px 80px rgba(14, 45, 75, 0.14);
+}
+
+.dark .glass-panel {
+  background: rgba(16, 24, 38, 0.76);
+  border-color: rgba(255, 255, 255, 0.09);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.34);
+}
+
+.ripple {
+  position: relative;
+  overflow: hidden;
+}
+
+.ripple::after {
+  content: "";
+  position: absolute;
+  inset: auto;
+  width: 0;
+  height: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.38);
+  transform: translate(-50%, -50%);
+  opacity: 0;
+}
+
+.ripple:active::after {
+  left: 50%;
+  top: 50%;
+  width: 220px;
+  height: 220px;
+  opacity: 1;
+  transition: width 0.35s ease, height 0.35s ease, opacity 0.45s ease;
+}
+
+.table-scrollbar::-webkit-scrollbar {
+  height: 9px;
+  width: 9px;
+}
+
+.table-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(10, 146, 200, 0.35);
+  border-radius: 999px;
+}
