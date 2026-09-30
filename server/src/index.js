@@ -26,7 +26,15 @@ app.use(express.json({ limit: "10mb" }));
 app.use(morgan("combined"));
 app.use(rateLimit({ windowMs: 15 * 60 * 1000, limit: 250 }));
 
-app.get("/health", (_req, res) => res.json({ status: "ok", service: "raquel-erp-api" }));
+app.get("/health", async (_req, res) => {
+  try {
+    const { pingDb } = await import("./config/db.js");
+    const db = await pingDb();
+    res.json({ status: "ok", service: "raquel-erp-api", database: db.db, user: db.usr });
+  } catch (error) {
+    res.status(503).json({ status: "error", service: "raquel-erp-api", message: error.message });
+  }
+});
 app.use("/api/auth", authRouter);
 app.use("/api/erp", erpRouter);
 app.use(errorHandler);

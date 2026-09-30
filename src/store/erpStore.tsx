@@ -391,12 +391,51 @@ type StoreValue = {
 
 const StoreContext = createContext<StoreValue | null>(null);
 
+async function fetchSnapshot(): Promise<ErpDatabase | null> {
+  try {
+    const response = await fetch("/api/erp/snapshot");
+    if (!response.ok) return null;
+    const payload = await response.json();
+    return payload.snapshot ?? null;
+  } catch {
+    return null;
+  }
+}
+
+function persistSnapshot(db: ErpDatabase) {
+  void fetch("/api/erp/snapshot", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ snapshot: db })
+  }).catch(() => undefined);
+}
+
 export function ErpProvider({ children }: { children: ReactNode }) {
   const [db, setDb] = useState<ErpDatabase>(loadDb);
+  const [pgReady, setPgReady] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    void fetchSnapshot().then((snapshot) => {
+      if (cancelled || !snapshot?.products?.length) {
+        setPgReady(true);
+        return;
+      }
+      setDb(hydrateQr(snapshot));
+      localStorage.setItem(DB_KEY, JSON.stringify(snapshot));
+      setPgReady(true);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     localStorage.setItem(DB_KEY, JSON.stringify(db));
-  }, [db]);
+    if (!pgReady) return;
+    const timer = window.setTimeout(() => persistSnapshot(db), 700);
+    return () => window.clearTimeout(timer);
+  }, [db, pgReady]);
 
   useEffect(() => {
     const refreshQr = () => setDb((prev) => hydrateQr(prev));

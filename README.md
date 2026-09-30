@@ -2,6 +2,10 @@
 
 ERP web profesional para una empresa de aluminio y vidrio, construido con React, Vite, Tailwind CSS, Framer Motion, React Router, TanStack Query, React Hook Form, Zod y un backend Express preparado para Supabase/PostgreSQL.
 
+## Base de datos (PostgreSQL / DBeaver)
+
+Esquema relacional completo + semilla del prototipo en `database/`. Conexión: `localhost:5432`, base `instalaciones_raquel`, usuario `raquel`, clave `raquel2026`. Detalle en `database/README.md`.
+
 ## Arranque local
 
 ```bash

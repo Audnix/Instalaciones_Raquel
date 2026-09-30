@@ -33,11 +33,28 @@ export function AuthProvider({ children, directory }: { children: ReactNode; dir
       user,
       isAuthenticated: Boolean(user),
       login: async (email, password, remember) => {
-        const found = directory.find(
-          (item) => item.email.toLowerCase() === email.toLowerCase() && item.password === password && item.active
-        );
+        let found: SessionUser | undefined;
+        try {
+          const response = await fetch("/api/auth/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, password })
+          });
+          const payload = await response.json();
+          if (response.ok && payload.user) {
+            found = payload.user as SessionUser;
+            if (payload.token) localStorage.setItem("raquel_token", payload.token);
+          }
+        } catch {
+          found = undefined;
+        }
+        if (!found) {
+          found = directory.find(
+            (item) => item.email.toLowerCase() === email.toLowerCase() && item.password === password && item.active
+          );
+        }
         if (!found) throw new Error("Credenciales inválidas o usuario inactivo.");
-        const safe = { ...found };
+        const safe = { ...found, password };
         if (remember) localStorage.setItem(SESSION_KEY, JSON.stringify(safe));
         else sessionStorage.setItem(SESSION_KEY, JSON.stringify(safe));
         setUser(safe);
@@ -45,6 +62,7 @@ export function AuthProvider({ children, directory }: { children: ReactNode; dir
       logout: () => {
         localStorage.removeItem(SESSION_KEY);
         sessionStorage.removeItem(SESSION_KEY);
+        localStorage.removeItem("raquel_token");
         setUser(null);
       },
       can: (moduleId, action = "read") => can(user, moduleId, action),
