@@ -1,31 +1,21 @@
 # Instalaciones Raquel ERP
 
-ERP web profesional para una empresa de aluminio y vidrio, construido con React, Vite, Tailwind CSS, Framer Motion, React Router, TanStack Query, React Hook Form, Zod y un backend Express preparado para Supabase/PostgreSQL.
+ERP web para una empresa de aluminio y vidrio, construido con React, Vite y un backend Express. La persistencia local activa usa SQL Server y SSMS.
+
+## Base de datos (SQL Server / SSMS 22)
+
+Los scripts de instalacion, esquema relacional y sincronizacion estan en `Database/SQLServer/`. Sigue el orden indicado en `Database/SQLServer/README.md`. Los scripts PostgreSQL de `database/` pertenecen a una implementacion alternativa y no son usados por el arranque SQL Server local.
 
 ## Arranque local
 
 ```bash
 npm install
-npm run dev
-```
-
-En otra terminal, inicia el backend:
-
-```bash
-npm --prefix server install
 npm run server
 ```
 
-## Conectar SQL Server local
+`npm run server` inicia o reutiliza el backend y Vite. El navegador abre `http://localhost:5173/`; la terminal indica si SQL Server esta conectado. Mantén la terminal abierta mientras uses el ERP.
 
-1. En SQL Server Management Studio, ejecuta en orden `Database/SQLServer/00_create_database.sql`, `01_schema.sql` y `02_seed.sql`.
-2. En `Database/SQLServer/03_app_login.sql`, cambia el valor de `@AppPassword` por una clave propia y ejecuta el script. Usa la misma clave como `DB_PASSWORD` en el archivo `.env` de la raiz del proyecto. No reutilices claves que ya hayan estado en archivos compartidos.
-3. Crea `.env` copiando `.env.example` y verifica `DB_SERVER`, `DB_INSTANCE_NAME`, `DB_NAME` y `DB_USER`. `.env` esta excluido de Git.
-4. Si usas una instancia nombrada y no conecta, habilita TCP/IP en SQL Server Configuration Manager, fija un puerto y configura `DB_PORT`; deja `DB_INSTANCE_NAME` vacio.
-5. Instala las dependencias del backend y arranca frontend y backend en terminales separadas con `npm run dev` y `npm run server`.
-6. Abre `http://127.0.0.1:4000/health/database`. Una respuesta con `"status":"ok"` confirma la conexion; el estado del ERP se sincroniza mediante `dbo.ErpState`.
-
-La API utiliza SQL Server para el estado principal de la aplicacion. Algunas rutas REST de autenticacion y modulos todavia dependen de Supabase y no forman parte de esta conexion local.
+Para preparar SQL Server, copia `.env.example` a `.env`, cambia `DB_PASSWORD` por la clave privada configurada en SSMS y sigue las instrucciones de `Database/SQLServer/README.md`. Nunca subas `.env` ni contrasenas reales al repositorio.
 
 ## Alcance incluido
 
@@ -38,4 +28,4 @@ La API utiliza SQL Server para el estado principal de la aplicacion. Algunas rut
 
 ## Produccion
 
-Frontend recomendado en Vercel, backend en Render/Railway y base de datos PostgreSQL/Supabase con tablas versionadas mediante migraciones.
+La configuracion de produccion requiere credenciales privadas, autenticacion y un SQL Server accesible desde el backend. No uses las credenciales locales de desarrollo en un despliegue publico.

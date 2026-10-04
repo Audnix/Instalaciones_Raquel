@@ -9,9 +9,7 @@ import { dirname, resolve } from "node:path";
 
 const envPath = resolve(dirname(fileURLToPath(import.meta.url)), "../../.env");
 dotenv.config({ path: envPath });
-const [{ authRouter }, { erpRouter }, { errorHandler }, { database, getDatabase }, { stateRouter }] = await Promise.all([
-  import("./routes/auth.js"),
-  import("./routes/erp.js"),
+const [{ errorHandler }, { database, getDatabase }, { stateRouter }] = await Promise.all([
   import("./middleware/errorHandler.js"),
   import("./config/sqlserver.js"),
   import("./routes/state.js")
@@ -46,8 +44,6 @@ app.get("/health/database", async (_req, res) => {
   }
 });
 app.use("/api/state", stateRouter);
-app.use("/api/auth", authRouter);
-app.use("/api/erp", erpRouter);
 app.use(errorHandler);
 
 app.listen(port, "127.0.0.1", () => {

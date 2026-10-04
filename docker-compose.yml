@@ -1,0 +1,23 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: raquel-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: instalaciones_raquel
+      POSTGRES_USER: raquel
+      POSTGRES_PASSWORD: raquel2026
+    ports:
+      - "5432:5432"
+    volumes:
+      - raquel_pgdata:/var/lib/postgresql/data
+      - ./database/00_schema.sql:/docker-entrypoint-initdb.d/00_schema.sql:ro
+      - ./database/01_seed.sql:/docker-entrypoint-initdb.d/01_seed.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U raquel -d instalaciones_raquel"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  raquel_pgdata:
