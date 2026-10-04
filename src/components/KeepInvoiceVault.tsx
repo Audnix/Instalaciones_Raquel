@@ -17,7 +17,7 @@ export function KeepInvoiceVault({ doc }: { doc: PortableDoc }) {
       if (action === "pdf") {
         window.print();
         setStatus("saved");
-        setHint("Elegí “Guardar como PDF” en el diálogo");
+        setHint("PDF listo");
       } else if (action === "share") {
         const result = await shareInvoice(doc);
         setStatus(result.startsWith("shared") ? "shared" : "saved");
@@ -106,7 +106,7 @@ export function KeepInvoiceVault({ doc }: { doc: PortableDoc }) {
               <ActionCard
                 icon={<Printer size={18} />}
                 title="Guardar PDF"
-                subtitle="Imprimir → Guardar como PDF"
+                subtitle="Comprobante listo para archivo"
                 accent="from-amber-300 to-orange-400"
                 disabled={status === "working"}
                 onClick={() => void run("pdf")}

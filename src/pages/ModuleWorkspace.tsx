@@ -1,11 +1,18 @@
 ﻿import { FormEvent, useMemo, useState } from "react";
+import { FileSpreadsheet } from "lucide-react";
+import AuditPage from "./AuditPage";
 import { useAuth } from "../auth/AuthContext";
 import { Button } from "../components/Button";
 import { SaleTicket, type TicketData } from "../components/SaleTicket";
+import { AlbumStudio } from "../components/AlbumStudio";
+import { BooksStudio } from "../components/BooksStudio";
+import { DgiBooks } from "../components/DgiBooks";
 import { Field, inputClass, Money, PageHeader, StatusPill } from "../components/Ui";
-import { bestPromotion } from "../data/catalog";
+import { bestPromotion, productPhoto } from "../data/catalog";
+import { downloadAccountingWorkbook } from "../lib/accountingExcel";
+import { companyFiscal, monthKey } from "../lib/dgiNi";
+import { payrollOf } from "../lib/payrollNi";
 import { buildDocToken } from "../lib/invoiceDoc";
-import { getPublicOrigin } from "../lib/publicOrigin";
 import { useErp } from "../store/erpStore";
 import type { ModuleId, ProductionOrder, Sale } from "../types/erp";
 
@@ -63,7 +70,7 @@ export function ModuleWorkspace({ moduleId }: { moduleId: ModuleId }) {
     case "costos":
       return <CostsView />;
     case "auditoria":
-      return <AuditView />;
+      return <AuditPage />;
     default:
       return null;
   }
@@ -236,7 +243,8 @@ function FinanceView() {
 
   return (
     <div className="space-y-5">
-      <PageHeader kicker="Finanzas" title="Ingresos, egresos y proyecciones" subtitle="Ingresos, egresos y proyección mensual." />
+      <PageHeader kicker="Finanzas" title="Control financiero" subtitle="Resultado del mes, cuentas que restan y punto de equilibrio." />
+      <BooksStudio start="rumbo" />
       <div className="grid gap-3 sm:grid-cols-3">
         <Kpi label="Ingresos" value={income} />
         <Kpi label="Egresos" value={expense} />
@@ -279,12 +287,13 @@ function FinanceView() {
 }
 
 function AccountingView() {
-  const { db, addAccounting, runNightlyClose } = useErp();
+  const { db, addAccounting, runNightlyClose, log } = useErp();
   const { user, can } = useAuth();
   const write = can("contabilidad", "write");
   const debit = db.accounting.reduce((sum, item) => sum + item.debit, 0);
   const credit = db.accounting.reduce((sum, item) => sum + item.credit, 0);
   const [closeMsg, setCloseMsg] = useState<string | null>(null);
+  const [excelMsg, setExcelMsg] = useState<string | null>(null);
 
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -302,9 +311,30 @@ function AccountingView() {
     event.currentTarget.reset();
   };
 
+  const exportExcel = () => {
+    const book = downloadAccountingWorkbook(db, user?.name ?? "sistema");
+    log({
+      userName: user?.name ?? "sistema",
+      action: "exportar libro",
+      module: "contabilidad",
+      detail: `Excel ${db.accounting.length} asientos · sello ${book.stamp}`,
+      reference: book.stamp
+    });
+    setExcelMsg(`Libro listo · sello ${book.stamp}`);
+  };
+
   return (
     <div className="space-y-5">
-      <PageHeader kicker="Contabilidad" title="Diario de operaciones" subtitle="Diario, cuadre y cierre de periodo." />
+      <PageHeader
+        kicker="Contabilidad"
+        title="Libros contables"
+        subtitle="Asientos, cuadre del periodo y exportación a Excel."
+        actions={
+          <Button variant="secondary" icon={<FileSpreadsheet size={16} />} onClick={exportExcel}>
+            Bajar Excel día · mes · año
+          </Button>
+        }
+      />
       <div className="grid gap-3 sm:grid-cols-3">
         <Kpi label="Débitos" value={debit} />
         <Kpi label="Créditos" value={credit} />
@@ -317,12 +347,15 @@ function AccountingView() {
               variant="secondary"
               onClick={() => setCloseMsg(runNightlyClose(user?.name ?? "sistema").message)}
             >
-              Ejecutar cierre RS02
+              Cerrar periodo
             </Button>
           )}
           {closeMsg && <p className="mt-2 text-xs font-semibold text-slate-600 dark:text-slate-300">{closeMsg}</p>}
+          {excelMsg && <p className="mt-2 text-xs font-semibold text-brand-700">{excelMsg}</p>}
         </article>
       </div>
+      <BooksStudio />
+      <DgiBooks />
       {write && (
         <form onSubmit={submit} className="grid gap-3 rounded-lg bg-white p-4 shadow-soft dark:bg-slate-900 md:grid-cols-5">
           <Field label="Descripción"><input name="description" required className={inputClass} /></Field>
@@ -362,7 +395,8 @@ function MarketingView({ title }: { title: string }) {
 
   return (
     <div className="space-y-5">
-      <PageHeader kicker="Mercadotecnia" title={title} subtitle="Promos activas y rotación de showroom." />
+      <PageHeader kicker="Mercadotecnia" title={title} subtitle="Álbum mensual con fecha y enlace, más rotación de showroom." />
+      <AlbumStudio />
       <section className="grid gap-3 md:grid-cols-2">
         {(db.promotions ?? []).filter((item) => item.active).map((item) => (
           <article key={item.id} className="overflow-hidden rounded-2xl bg-gradient-to-r from-brand-900 to-cyan-700 p-5 text-white shadow-soft">
@@ -376,11 +410,14 @@ function MarketingView({ title }: { title: string }) {
       <h2 className="font-extrabold">Electrodomésticos en vitrina</h2>
       <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
         {electros.map((item, index) => (
-          <article key={item.id} className="rounded-lg bg-white p-4 shadow-soft dark:bg-slate-900">
+          <article key={item.id} className="overflow-hidden rounded-lg bg-white shadow-soft dark:bg-slate-900">
+            <img src={productPhoto(item)} alt="" className="h-32 w-full object-cover" />
+            <div className="p-4">
             <p className="text-xs font-bold text-brand-700">Top {index + 1}</p>
             <h3 className="font-extrabold">{item.name}</h3>
             <p className="text-sm text-slate-500">Stock {item.stock} · {item.qty} vendidas</p>
             <p className="mt-2 font-bold"><Money value={item.unitPrice} /></p>
+            </div>
           </article>
         ))}
       </section>
@@ -545,10 +582,7 @@ function SalesView() {
 
   return (
     <div className="space-y-5">
-      <PageHeader kicker="Ventas" title="Facturas y proformas" subtitle="Al facturar sale el ticket con QR. Guardá en PDF y abrilo en el celular con la IP de red." />
-      <div className="rounded-2xl border border-cyan-200 bg-cyan-50 px-4 py-3 text-sm text-cyan-950 dark:border-cyan-500/30 dark:bg-cyan-500/10 dark:text-cyan-50">
-        En el celular abrí: <strong className="font-mono">{getPublicOrigin() || "http://192.168.1.8:5173"}</strong> (misma Wi‑Fi). No uses <span className="font-mono">localhost</span>.
-      </div>
+      <PageHeader kicker="Ventas" title="Facturas y proformas" subtitle="Cobro con IVA, descuento de lote y ticket con QR." />
       <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
         {(db.promotions ?? []).filter((item) => item.active).map((item) => (
           <article key={item.id} className="rounded-2xl bg-gradient-to-br from-amber-50 to-white p-4 shadow-soft dark:from-amber-500/10 dark:to-slate-900">
@@ -789,10 +823,14 @@ function ProjectsView() {
 }
 
 function HrView({ payroll }: { payroll: boolean }) {
-  const { db, addEmployee } = useErp();
+  const { db, addEmployee, payPayroll } = useErp();
   const { user, can } = useAuth();
   const write = can(payroll ? "nomina" : "rrhh", "write");
-  const total = db.employees.reduce((sum, item) => sum + item.salary, 0);
+  const pack = payrollOf(db.employees);
+  const period = monthKey();
+  const paid = (db.payrollRuns ?? []).find((item) => item.period === period);
+  const [payMsg, setPayMsg] = useState<string | null>(null);
+
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
@@ -804,9 +842,81 @@ function HrView({ payroll }: { payroll: boolean }) {
     }, user?.name ?? "sistema");
     event.currentTarget.reset();
   };
+
   return (
     <div className="space-y-5">
-      <PageHeader kicker={payroll ? "Nómina" : "RRHH"} title={payroll ? "Planilla quincenal" : "Talento humano"} subtitle={payroll ? `Planilla estimada: C$ ${total.toLocaleString()}` : "Registro de personal por área."} />
+      <PageHeader
+        kicker={payroll ? "Nómina" : "RRHH"}
+        title={payroll ? "Pago a trabajadores" : "Talento humano"}
+        subtitle={payroll ? "INSS 7% laboral · 21.5% patronal · INATEC 2% · IR Art. 23" : "Registro de personal por área."}
+      />
+      {payroll && (
+        <>
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <Kpi label="Bruto" value={pack.gross} />
+            <Kpi label="INSS trabajadores" value={pack.inssLaboral} />
+            <Kpi label="IR retenido DGI" value={pack.ir} />
+            <Kpi label="Neto a depositar" value={pack.net} />
+          </div>
+          <div className="grid gap-3 md:grid-cols-3">
+            <article className="rounded-xl bg-white p-4 shadow-soft dark:bg-slate-900">
+              <p className="text-xs text-slate-500">INSS patronal 21.5%</p>
+              <p className="mt-1 font-black"><Money value={pack.inssPatronal} /></p>
+            </article>
+            <article className="rounded-xl bg-white p-4 shadow-soft dark:bg-slate-900">
+              <p className="text-xs text-slate-500">INATEC 2%</p>
+              <p className="mt-1 font-black"><Money value={pack.inatec} /></p>
+            </article>
+            <article className="rounded-xl bg-white p-4 shadow-soft dark:bg-slate-900">
+              <p className="text-xs text-slate-500">Costo empresa (mes)</p>
+              <p className="mt-1 font-black"><Money value={pack.employerCost} /></p>
+              <p className="mt-1 text-[11px] text-slate-400">Reserva aguinaldo <Money value={pack.aguinaldo} /></p>
+            </article>
+          </div>
+          {write && (
+            <div className="rounded-2xl bg-slate-950 p-4 text-cyan-50">
+              <p className="text-sm">Planilla {period} · {pack.headcount} personas. El neto sale de banco; INSS, INATEC e IR quedan por pagar.</p>
+              <Button
+                className="mt-3"
+                disabled={Boolean(paid)}
+                onClick={() => {
+                  const result = payPayroll(period, user?.name ?? "sistema");
+                  setPayMsg(result.error ?? `Pagada · neto C$ ${result.net?.toLocaleString("es-NI")}`);
+                }}
+              >
+                {paid ? "Ya pagada este mes" : "Pagar planilla"}
+              </Button>
+              {payMsg && <p className="mt-2 text-xs font-semibold">{payMsg}</p>}
+            </div>
+          )}
+          <section className="overflow-x-auto rounded-lg bg-white p-4 shadow-soft dark:bg-slate-900">
+            <table className="w-full min-w-[720px] text-sm">
+              <thead className="text-left text-[11px] uppercase text-slate-400">
+                <tr>
+                  <th className="p-2">Trabajador</th>
+                  <th>Bruto</th>
+                  <th>INSS 7%</th>
+                  <th>IR</th>
+                  <th>Neto</th>
+                  <th>Patronal + INATEC</th>
+                </tr>
+              </thead>
+              <tbody>
+                {pack.slips.map((item) => (
+                  <tr key={item.employeeId} className="border-t border-slate-100 dark:border-white/10">
+                    <td className="p-2"><strong>{item.name}</strong><div className="text-xs text-slate-500">{item.position}</div></td>
+                    <td><Money value={item.gross} /></td>
+                    <td><Money value={item.inssLaboral} /></td>
+                    <td><Money value={item.ir} /></td>
+                    <td className="font-black"><Money value={item.net} /></td>
+                    <td><Money value={item.inssPatronal + item.inatec} /></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </section>
+        </>
+      )}
       {write && !payroll && (
         <form onSubmit={submit} className="grid gap-3 rounded-lg bg-white p-4 shadow-soft dark:bg-slate-900 md:grid-cols-4">
           <Field label="Nombre"><input name="name" required className={inputClass} /></Field>
@@ -816,7 +926,7 @@ function HrView({ payroll }: { payroll: boolean }) {
           <div className="md:col-span-4"><Button>Alta</Button></div>
         </form>
       )}
-      <List rows={db.employees.map((item) => ({ k: item.id, a: item.name, b: item.position, c: item.area, d: item.salary }))} />
+      {!payroll && <List rows={db.employees.map((item) => ({ k: item.id, a: item.name, b: item.position, c: item.area, d: item.salary }))} />}
     </div>
   );
 }
@@ -856,37 +966,10 @@ function CashView({ account }: { account: "caja" | "banco" }) {
 }
 
 function CostsView() {
-  const { db } = useErp();
-  const material = db.purchases.filter((item) => item.status === "received").reduce((sum, item) => sum + item.total, 0);
-  const labor = db.employees.reduce((sum, item) => sum + item.salary, 0);
   return (
     <div className="space-y-5">
-      <PageHeader kicker="Costos" title="Estructura de costos" subtitle="Materiales y mano de obra por obra." />
-      <div className="grid gap-3 md:grid-cols-3">
-        <Kpi label="Materiales" value={material} />
-        <Kpi label="Mano de obra (mes)" value={labor} />
-        <Kpi label="Costo combinado" value={material + labor} />
-      </div>
-    </div>
-  );
-}
-
-function AuditView() {
-  const { db } = useErp();
-  return (
-    <div className="space-y-5">
-      <PageHeader kicker="Gobierno" title="Auditoría y trazabilidad" subtitle="Historial de movimientos del sistema." />
-      <div className="space-y-2">
-        {db.audit.map((item) => (
-          <article key={item.id} className="rounded-lg bg-white p-4 shadow-soft dark:bg-slate-900">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <strong>{item.action} · {item.module}</strong>
-              <span className="text-xs text-slate-500">{new Date(item.at).toLocaleString("es-NI")}</span>
-            </div>
-            <p className="text-sm text-slate-500">{item.userName}: {item.detail}</p>
-          </article>
-        ))}
-      </div>
+      <PageHeader kicker="Costos" title="Costos PEPS por línea" subtitle="Materiales, mano de obra y margen de cada familia de producto." />
+      <BooksStudio start="costos" />
     </div>
   );
 }

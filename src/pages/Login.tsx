@@ -6,8 +6,10 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import logo from "../assets/logo-window.png";
 import { useAuth } from "../auth/AuthContext";
-import { hierarchyMeta, seedUsers } from "../auth/roles";
+import { seedUsers } from "../auth/roles";
 import { Button } from "../components/Button";
+import { RoleMark } from "../components/RoleMark";
+import { clearLoginGuard, loginLockMs, registerLoginFail } from "../lib/loginGuard";
 import { useErp } from "../store/erpStore";
 
 const schema = z.object({
@@ -20,10 +22,11 @@ type FormValues = z.infer<typeof schema>;
 
 export default function Login({ dark, toggleTheme }: { dark: boolean; toggleTheme: () => void }) {
   const { login } = useAuth();
-  const { db } = useErp();
+  const { db, log } = useErp();
   const [show, setShow] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [lockLeft, setLockLeft] = useState(() => loginLockMs());
   const {
     register,
     handleSubmit,
@@ -36,12 +39,29 @@ export default function Login({ dark, toggleTheme }: { dark: boolean; toggleThem
   });
 
   const submit = handleSubmit(async (values) => {
+    const locked = loginLockMs();
+    if (locked > 0) {
+      setLockLeft(locked);
+      setError(`Acceso cerrado ${Math.ceil(locked / 1000)} s. Probá de nuevo.`);
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
       await login(values.email, values.password, values.remember);
+      clearLoginGuard();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "No se pudo iniciar sesión");
+      const guard = registerLoginFail();
+      setLockLeft(guard.locked ? guard.until - Date.now() : 0);
+      log({
+        userName: values.email,
+        action: "acceso denegado",
+        module: "usuarios",
+        detail: guard.locked ? "clave mala · candado" : "clave mala"
+      });
+      setError(guard.locked
+        ? "Tres claves malas. El acceso se cierra 90 segundos."
+        : (err instanceof Error ? err.message : "No se pudo iniciar sesión"));
     } finally {
       setLoading(false);
     }
@@ -96,7 +116,9 @@ export default function Login({ dark, toggleTheme }: { dark: boolean; toggleThem
               Recordar sesión
             </label>
             {error && <div className="rounded-lg bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700">{error}</div>}
-            <Button className="h-12 w-full" disabled={!isValid || loading}>{loading ? "Entrando..." : "Iniciar sesión"}</Button>
+            <Button className="h-12 w-full" disabled={!isValid || loading || lockLeft > 0}>
+              {loading ? "Entrando..." : lockLeft > 0 ? `Cerrado ${Math.ceil(lockLeft / 1000)} s` : "Iniciar sesión"}
+            </Button>
             <div className="grid gap-2">
               {directory.map((item) => (
                 <button
@@ -108,8 +130,10 @@ export default function Login({ dark, toggleTheme }: { dark: boolean; toggleThem
                     setValue("password", item.password, { shouldValidate: true });
                   }}
                 >
-                  <strong>{item.name}</strong>
-                  <span className="ml-2 text-slate-500">{hierarchyMeta[item.hierarchy].label}</span>
+                    <span className="flex items-center justify-between gap-2">
+                    <strong>{item.name}</strong>
+                    <RoleMark role={item.hierarchy} compact />
+                  </span>
                   <div className="text-slate-400">{item.email}</div>
                 </button>
               ))}

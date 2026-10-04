@@ -1,28 +1,49 @@
 import type { Action, AreaRole, HierarchyRole, ModuleId, SessionUser } from "../types/erp";
 
+export type RolePower = "consultar" | "ejecutar" | "aprobar" | "administrar";
+
+export type PowerValue = true | false | "área";
+
+export const rolePowers: Record<HierarchyRole, Record<RolePower, PowerValue>> = {
+  superadmin: { consultar: true, ejecutar: true, aprobar: true, administrar: true },
+  administrador: { consultar: true, ejecutar: true, aprobar: true, administrar: "área" },
+  estandar: { consultar: true, ejecutar: true, aprobar: false, administrar: false },
+  invitado: { consultar: true, ejecutar: false, aprobar: false, administrar: false }
+};
+
+export const powerLabels: RolePower[] = ["consultar", "ejecutar", "aprobar", "administrar"];
+
 export const hierarchyMeta: Record<
   HierarchyRole,
-  { label: string; duty: string; color: string }
+  { label: string; duty: string; color: string; mark: string; markHint: string }
 > = {
   superadmin: {
     label: "Superadministrador",
-    duty: "Control total del sistema, datos, módulos y niveles de acceso de todos los usuarios.",
-    color: "bg-amber-500"
+    duty: "Administra el sistema y también ejecuta cualquier operación. No se queda solo en configurar.",
+    color: "bg-amber-500",
+    mark: "Corona",
+    markHint: "Administra + ejecuta"
   },
   administrador: {
     label: "Administrador de área",
-    duty: "Gestiona su área asignada, genera reportes y administra usuarios con permisos limitados.",
-    color: "bg-brand-600"
+    duty: "Administra su área, aprueba movimientos y ejecuta lo de su equipo.",
+    color: "bg-brand-600",
+    mark: "Escudo",
+    markHint: "Aprueba su área"
   },
   estandar: {
     label: "Usuario estándar",
-    duty: "Registra y consulta la operación diaria de su área. No modifica la configuración del sistema.",
-    color: "bg-moss"
+    duty: "Ejecuta el día a día (facturar, comprar, OT). No configura usuarios ni el sistema.",
+    color: "bg-moss",
+    mark: "Mano",
+    markHint: "Solo ejecuta"
   },
   invitado: {
     label: "Usuario restringido / Invitado",
-    duty: "Solo consulta información autorizada. No puede modificar registros.",
-    color: "bg-slate-500"
+    duty: "Solo consulta. No ejecuta cobros, ni descuenta stock, ni administra.",
+    color: "bg-slate-500",
+    mark: "Ojo",
+    markHint: "Solo mira"
   }
 };
 

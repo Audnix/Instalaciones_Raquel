@@ -50,7 +50,7 @@ export default function RequirementsPage() {
           <PulseStat label="Requerimientos" value={String(stats.total)} hint="RF · RNF · RD · RU · RS" />
           <PulseStat label="Validados" value={String(stats.validados)} hint={`${stats.cobertura}% del catálogo`} />
           <PulseStat label="Funciones OK" value={`${stats.funciones}/${validationMatrix.length}`} hint="Matriz de validación" />
-          <PulseStat label="Innovaciones" value="6" hint="Pulse · QR · Proformas" />
+          <PulseStat label="Innovaciones" value={String(innovations.length)} hint="Pulse · QR · UML-E" />
         </div>
         <div className="relative mt-4 flex flex-wrap gap-2">
           <Link to="/"><Button variant="secondary">Inicio</Button></Link>

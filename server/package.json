@@ -18,6 +18,7 @@
     "instalaciones-raquel-erp": "file:..",
     "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.0",
+    "mssql": "^12.7.2",
     "zod": "^3.25.67"
   }
 }

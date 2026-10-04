@@ -11,14 +11,16 @@ const Login = lazy(() => import("./pages/Login"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const ModulePage = lazy(() => import("./pages/ModulePage"));
 const ValidateInvoicePage = lazy(() => import("./pages/ValidateInvoicePage"));
+const CatalogAlbumPage = lazy(() => import("./pages/CatalogAlbumPage"));
 
 export default function App() {
   const { isAuthenticated, logout } = useAuth();
   const location = useLocation();
   const isValidate = location.pathname.startsWith("/validar");
+  const isAlbum = location.pathname.startsWith("/vitrina");
   const [dark, setDark] = useState(() => localStorage.getItem("raquel_theme") === "dark");
   const [showSplash, setShowSplash] = useState(() => {
-    if (typeof window !== "undefined" && window.location.pathname.startsWith("/validar")) return false;
+    if (typeof window !== "undefined" && (window.location.pathname.startsWith("/validar") || window.location.pathname.startsWith("/vitrina"))) return false;
     return sessionStorage.getItem("raquel_splash_done") !== "1";
   });
 
@@ -42,6 +44,17 @@ export default function App() {
     return (
       <Suspense fallback={<Loader label="Abriendo factura" />}>
         <ValidateInvoicePage />
+      </Suspense>
+    );
+  }
+
+  if (isAlbum) {
+    return (
+      <Suspense fallback={<Loader label="Abriendo vitrina" />}>
+        <Routes>
+          <Route path="/vitrina/:month/:productId" element={<CatalogAlbumPage />} />
+          <Route path="/vitrina/:month" element={<CatalogAlbumPage />} />
+        </Routes>
       </Suspense>
     );
   }

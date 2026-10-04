@@ -9,12 +9,23 @@ npm install
 npm run dev
 ```
 
-Backend:
+En otra terminal, inicia el backend:
 
 ```bash
 npm --prefix server install
 npm run server
 ```
+
+## Conectar SQL Server local
+
+1. En SQL Server Management Studio, ejecuta en orden `Database/SQLServer/00_create_database.sql`, `01_schema.sql` y `02_seed.sql`.
+2. En `Database/SQLServer/03_app_login.sql`, cambia el valor de `@AppPassword` por una clave propia y ejecuta el script. Usa la misma clave como `DB_PASSWORD` en el archivo `.env` de la raiz del proyecto. No reutilices claves que ya hayan estado en archivos compartidos.
+3. Crea `.env` copiando `.env.example` y verifica `DB_SERVER`, `DB_INSTANCE_NAME`, `DB_NAME` y `DB_USER`. `.env` esta excluido de Git.
+4. Si usas una instancia nombrada y no conecta, habilita TCP/IP en SQL Server Configuration Manager, fija un puerto y configura `DB_PORT`; deja `DB_INSTANCE_NAME` vacio.
+5. Instala las dependencias del backend y arranca frontend y backend en terminales separadas con `npm run dev` y `npm run server`.
+6. Abre `http://127.0.0.1:4000/health/database`. Una respuesta con `"status":"ok"` confirma la conexion; el estado del ERP se sincroniza mediante `dbo.ErpState`.
+
+La API utiliza SQL Server para el estado principal de la aplicacion. Algunas rutas REST de autenticacion y modulos todavia dependen de Supabase y no forman parte de esta conexion local.
 
 ## Alcance incluido
 

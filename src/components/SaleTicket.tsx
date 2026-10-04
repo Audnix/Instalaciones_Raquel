@@ -1,5 +1,6 @@
 import { QRCodeSVG } from "qrcode.react";
 import logo from "../assets/logo-window.png";
+import { companyFiscal } from "../lib/dgiNi";
 import { Button } from "./Button";
 
 export type TicketData = {
@@ -56,7 +57,7 @@ export function SaleTicket({
             <div>
               <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Instalaciones Raquel</p>
               <h2 className="text-lg font-black leading-tight">Aluminio · Vidrio · Hogar</h2>
-              <p className="text-xs text-slate-500">{kindLabel}</p>
+              <p className="text-xs text-slate-500">{kindLabel} · RUC {companyFiscal.ruc}</p>
             </div>
           </div>
 
@@ -96,9 +97,6 @@ export function SaleTicket({
             </div>
             <p className="text-center text-[11px] font-bold uppercase tracking-wide text-slate-500">
               Escaneá y guardá este QR
-            </p>
-            <p className="max-w-[280px] text-center text-[10px] leading-relaxed text-slate-400">
-              El QR abre la factura en el celular. En el diálogo de impresión elegí “Guardar como PDF”.
             </p>
           </div>
 

@@ -55,6 +55,15 @@ export type Product = {
   unitPrice: number;
   minQuantity: number;
   createdAt: string;
+  image?: string;
+  model?: string;
+  brand?: string;
+  material?: string;
+  measures?: string;
+  capacity?: string;
+  finish?: string;
+  use?: string;
+  warranty?: string;
 };
 
 export type InventoryLot = {
@@ -192,6 +201,43 @@ export type Employee = {
   area: string;
 };
 
+export type PayrollRun = {
+  id: string;
+  period: string;
+  paidAt: string;
+  actor: string;
+  gross: number;
+  inssLaboral: number;
+  inssPatronal: number;
+  inatec: number;
+  ir: number;
+  net: number;
+  employerCost: number;
+  employees?: PayrollRunEmployee[];
+};
+
+export type PayrollRunEmployee = {
+  employeeId: string;
+  gross: number;
+  inssLaboral: number;
+  ir: number;
+  net: number;
+  inssPatronal: number;
+  inatec: number;
+  aguinaldo: number;
+  employerCost: number;
+};
+
+export type CatalogAlbum = {
+  id: string;
+  month: string;
+  title: string;
+  blurb: string;
+  productIds: string[];
+  published: boolean;
+  createdAt: string;
+};
+
 export type Project = {
   id: string;
   code: string;
@@ -219,6 +265,11 @@ export type AuditEvent = {
   action: string;
   module: string;
   detail: string;
+  severity?: "info" | "warn" | "critical";
+  reference?: string;
+  uml?: string;
+  hash?: string;
+  prevHash?: string;
 };
 
 export type ErpDatabase = {
@@ -235,6 +286,8 @@ export type ErpDatabase = {
   production: ProductionOrder[];
   parties: Party[];
   employees: Employee[];
+  payrollRuns: PayrollRun[];
+  albums: CatalogAlbum[];
   projects: Project[];
   cash: CashMove[];
   users: SessionUser[];

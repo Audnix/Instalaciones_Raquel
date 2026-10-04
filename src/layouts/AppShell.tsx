@@ -6,6 +6,7 @@ import logo from "../assets/logo-window.png";
 import { useAuth } from "../auth/AuthContext";
 import { hierarchyMeta } from "../auth/roles";
 import { Button } from "../components/Button";
+import { RoleMark } from "../components/RoleMark";
 import { modules } from "../data/erpData";
 import { useErp } from "../store/erpStore";
 
@@ -23,7 +24,7 @@ export function AppShell({
   const [open, setOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const { user, canAccess } = useAuth();
-  const { db } = useErp();
+  const { db, syncStatus } = useErp();
   const visible = useMemo(() => modules.filter((item) => canAccess(item.id)), [canAccess]);
   const grouped = useMemo(() => {
     const map: Record<string, typeof visible> = {};
@@ -96,6 +97,19 @@ export function AppShell({
             <button className="rounded-lg p-2 hover:bg-slate-100 dark:hover:bg-white/10" onClick={toggleTheme} aria-label="Cambiar tema">
               {dark ? <Sun size={20} /> : <Moon size={20} />}
             </button>
+            <span
+              className={`hidden items-center gap-2 rounded-md px-2 py-1 text-xs font-semibold sm:inline-flex ${
+                syncStatus === "connected"
+                  ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300"
+                  : syncStatus === "loading"
+                    ? "bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300"
+                    : "bg-rose-50 text-rose-700 dark:bg-rose-950 dark:text-rose-300"
+              }`}
+              title="Estado de sincronizacion con SQL Server"
+            >
+              <span className="h-2 w-2 rounded-full bg-current" />
+              {syncStatus === "connected" ? "SQL Server" : syncStatus === "loading" ? "Conectando" : "Solo local"}
+            </span>
             <div className="group relative">
               <button className="relative rounded-lg p-2 hover:bg-slate-100 dark:hover:bg-white/10" aria-label="Notificaciones">
                 <Bell size={20} />
@@ -108,9 +122,12 @@ export function AppShell({
               </div>
             </div>
             {user && (
-              <div className="hidden text-right sm:block">
-                <p className="text-xs font-bold">{user.name}</p>
-                <p className="text-[11px] text-slate-500">{hierarchyMeta[user.hierarchy].label}</p>
+              <div className="hidden items-center gap-2 sm:flex">
+                <div className="text-right">
+                  <p className="text-xs font-bold">{user.name}</p>
+                  <p className="text-[11px] text-slate-500">{hierarchyMeta[user.hierarchy].label}</p>
+                </div>
+                <RoleMark role={user.hierarchy} compact />
               </div>
             )}
             <Button variant="ghost" icon={<LogOut size={18} />} onClick={onLogout}>Salir</Button>

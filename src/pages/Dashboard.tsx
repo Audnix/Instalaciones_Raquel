@@ -49,6 +49,9 @@ export default function Dashboard() {
               <Link to="/ers"><Button variant="secondary" icon={<ScrollText size={16} />}>Requerimientos</Button></Link>
             )}
             <Link to="/ventas"><Button variant="ghost" className="!text-white hover:!bg-white/15" icon={<Sparkles size={16} />}>Facturar</Button></Link>
+            {canAccess("metodologia") && (
+              <Link to="/metodologia"><Button variant="ghost" className="!text-white hover:!bg-white/15">Cobro pantalla a pantalla</Button></Link>
+            )}
           </div>
         </div>
         <div className="relative mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
