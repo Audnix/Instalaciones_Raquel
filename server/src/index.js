@@ -9,14 +9,25 @@ import { dirname, resolve } from "node:path";
 
 const envPath = resolve(dirname(fileURLToPath(import.meta.url)), "../../.env");
 dotenv.config({ path: envPath });
-const [{ errorHandler }, { database, getDatabase }, { stateRouter }] = await Promise.all([
+
+const [
+  { errorHandler },
+  { database, getDatabase },
+  { authRouter },
+  { usersRouter },
+  { tasksRouter },
+  { stateRouter }
+] = await Promise.all([
   import("./middleware/errorHandler.js"),
   import("./config/sqlserver.js"),
+  import("./routes/auth.js"),
+  import("./routes/users.js"),
+  import("./routes/tasks.js"),
   import("./routes/state.js")
 ]);
 
 const app = express();
-const port = process.env.PORT ?? 4000;
+const port = Number(process.env.PORT) || 4000;
 
 app.use(helmet());
 const corsOrigins = process.env.CORS_ORIGIN?.split(",").map((origin) => origin.trim()).filter(Boolean) ?? [
@@ -26,9 +37,10 @@ const corsOrigins = process.env.CORS_ORIGIN?.split(",").map((origin) => origin.t
 app.use(cors({ origin: corsOrigins, credentials: true }));
 app.use(express.json({ limit: "10mb" }));
 app.use(morgan("combined"));
-app.use(rateLimit({ windowMs: 15 * 60 * 1000, limit: 250 }));
+app.use(rateLimit({ windowMs: 15 * 60 * 1000, limit: 350 }));
 
 app.get("/health", (_req, res) => res.json({ status: "ok", service: "raquel-erp-api" }));
+
 app.get("/health/database", async (_req, res) => {
   if (!database) {
     return res.status(503).json({ status: "error", message: "Configura las variables DB_* en .env." });
@@ -37,13 +49,32 @@ app.get("/health/database", async (_req, res) => {
   try {
     const pool = await getDatabase();
     if (!pool) return res.status(503).json({ status: "error", message: "Configura las variables DB_* en .env." });
-    const result = await pool.request().query("SELECT DB_NAME() AS databaseName");
-    res.json({ status: "ok", database: result.recordset[0]?.databaseName });
+    const result = await pool.request().query(`
+      SELECT 
+        DB_NAME() AS databaseName,
+        SUSER_NAME() AS currentLogin,
+        (SELECT COUNT(*) FROM dbo.AppUserSessions WHERE RevokedAt IS NULL AND ExpiresAt > SYSUTCDATETIME()) AS activeSessions,
+        (SELECT COUNT(*) FROM dbo.AppUsers WHERE PasswordHash IS NOT NULL AND IsActive = 1) AS activatedAccounts;
+    `);
+    const row = result.recordset?.[0];
+    res.json({
+      status: "ok",
+      database: row?.databaseName,
+      user: row?.currentLogin,
+      activeSessions: row?.activeSessions || 0,
+      activatedAccounts: row?.activatedAccounts || 0
+    });
   } catch (error) {
     res.status(503).json({ status: "error", message: "No se pudo conectar con SQL Server.", detail: error.message });
   }
 });
+
+// Rutas de API
+app.use("/api/auth", authRouter);
+app.use("/api/users", usersRouter);
+app.use("/api/tasks", tasksRouter);
 app.use("/api/state", stateRouter);
+
 app.use(errorHandler);
 
 app.listen(port, "127.0.0.1", () => {

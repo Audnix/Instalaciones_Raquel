@@ -12,15 +12,18 @@ const Dashboard = lazy(() => import("./pages/Dashboard"));
 const ModulePage = lazy(() => import("./pages/ModulePage"));
 const ValidateInvoicePage = lazy(() => import("./pages/ValidateInvoicePage"));
 const CatalogAlbumPage = lazy(() => import("./pages/CatalogAlbumPage"));
+const InvitationPage = lazy(() => import("./pages/InvitationPage"));
+const MyTasksPage = lazy(() => import("./pages/MyTasksPage"));
 
 export default function App() {
   const { isAuthenticated, logout } = useAuth();
   const location = useLocation();
   const isValidate = location.pathname.startsWith("/validar");
   const isAlbum = location.pathname.startsWith("/vitrina");
+  const isInvitation = location.pathname.startsWith("/invitacion");
   const [dark, setDark] = useState(() => localStorage.getItem("raquel_theme") === "dark");
   const [showSplash, setShowSplash] = useState(() => {
-    if (typeof window !== "undefined" && (window.location.pathname.startsWith("/validar") || window.location.pathname.startsWith("/vitrina"))) return false;
+    if (typeof window !== "undefined" && (window.location.pathname.startsWith("/validar") || window.location.pathname.startsWith("/vitrina") || window.location.pathname.startsWith("/invitacion"))) return false;
     return sessionStorage.getItem("raquel_splash_done") !== "1";
   });
 
@@ -59,6 +62,17 @@ export default function App() {
     );
   }
 
+  if (isInvitation) {
+    return (
+      <Suspense fallback={<Loader label="Validando invitación" />}>
+        <Routes>
+          <Route path="/invitacion/:token" element={<InvitationPage />} />
+          <Route path="/invitacion" element={<Navigate to="/login" replace />} />
+        </Routes>
+      </Suspense>
+    );
+  }
+
   return (
     <>
       <AnimatePresence>{showSplash && <SplashScreen onDone={finishSplash} />}</AnimatePresence>
@@ -85,6 +99,7 @@ export default function App() {
                     <AppShell onLogout={logout} dark={dark} toggleTheme={() => setDark((value) => !value)}>
                       <Routes>
                         <Route index element={<Dashboard />} />
+                        <Route path="tareas" element={<MyTasksPage />} />
                         <Route path=":moduleId" element={<ModulePage />} />
                       </Routes>
                     </AppShell>

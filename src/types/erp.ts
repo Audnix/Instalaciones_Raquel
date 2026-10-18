@@ -41,7 +41,7 @@ export type SessionUser = {
   id: string;
   name: string;
   email: string;
-  password: string;
+  password?: string;
   hierarchy: HierarchyRole;
   areas: AreaRole[];
   active: boolean;
@@ -55,6 +55,7 @@ export type Product = {
   unitPrice: number;
   minQuantity: number;
   createdAt: string;
+  unit?: string;
   image?: string;
   model?: string;
   brand?: string;
@@ -86,7 +87,7 @@ export type KardexMove = {
   userName: string;
 };
 
-export type SaleItem = { productId: string; quantity: number; unitPrice: number };
+export type SaleItem = { productId: string; quantity: number; unitPrice: number; productName?: string };
 
 export type Sale = {
   id: string;

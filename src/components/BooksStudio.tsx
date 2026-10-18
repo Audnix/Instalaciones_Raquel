@@ -58,7 +58,7 @@ export function BooksStudio({ start = "gerencial" }: { start?: (typeof tabs)[num
           </div>
           <p className="text-sm font-semibold text-slate-600 dark:text-slate-300">
             Línea de mayor beneficio: <strong>{books.bestLine?.category ?? "—"}</strong>
-            {books.bestLine ? ` · margen ${books.bestLine.weight}% de las ventas` : ""}
+            {books.bestLine ? ` · Participación: ${books.bestLine.weight}% de las ventas totales · Margen Bruto: ${books.bestLine.sales > 0 ? ((books.bestLine.margin / books.bestLine.sales) * 100).toFixed(1) : "0.0"}%` : ""}
           </p>
           <Grid
             title="Ventas diarias (ticket a ticket)"
@@ -284,10 +284,35 @@ export function BooksStudio({ start = "gerencial" }: { start?: (typeof tabs)[num
             <Mini label="Mano de obra (mes)" value={books.labor} />
             <Mini label="Costo de ventas del año" value={books.opYear.cost} note="Valuación PEPS de facturas" />
           </div>
+          <div className="rounded-xl border border-cyan-200/60 bg-cyan-50/50 p-4 text-xs dark:border-cyan-900/30 dark:bg-cyan-950/20">
+            <p className="font-bold uppercase tracking-wider text-cyan-800 dark:text-cyan-300 mb-1.5">
+              Fórmulas y Reglas de Rentabilidad (Sección 20)
+            </p>
+            <div className="grid gap-2 sm:grid-cols-3 text-slate-700 dark:text-slate-300">
+              <div><strong>Margen Bruto:</strong> Ventas Netas − Costo PEPS</div>
+              <div><strong>Margen Bruto %:</strong> (Margen / Ventas Netas) × 100</div>
+              <div><strong>Participación:</strong> (Ventas Línea / Ventas Totales) × 100</div>
+              <div><strong>Markup (Recargo):</strong> Costo &gt; 0 ? (Margen / Costo) × 100 : 0%</div>
+              <div><strong>Valuación PEPS:</strong> Primeras entradas valoradas, primeras salidas</div>
+              <div><strong>Punto de Equilibrio:</strong> Costos Fijos / Margen Contribución %</div>
+            </div>
+          </div>
           <Grid
-            title="Costo por línea"
-            head={["Línea", "Ventas", "Costo PEPS", "Margen", "% ventas"]}
-            rows={books.mix.map((item) => [item.category, item.sales, item.cost, item.margin, item.weight])}
+            title="Costo y Rentabilidad por Línea de Producto"
+            head={["Línea", "Ventas Netas", "Costo PEPS", "Margen Bruto", "Margen %", "Participación %", "Markup %"]}
+            rows={books.mix.map((item) => {
+              const marginPct = item.sales > 0 ? (item.margin / item.sales) * 100 : 0;
+              const markup = item.cost > 0 ? (item.margin / item.cost) * 100 : 0;
+              return [
+                item.category,
+                item.sales,
+                item.cost,
+                item.margin,
+                `${marginPct.toFixed(1)}%`,
+                `${item.weight.toFixed(1)}%`,
+                `${markup.toFixed(1)}%`
+              ];
+            })}
           />
         </div>
       )}
