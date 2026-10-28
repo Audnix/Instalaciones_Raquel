@@ -1,0 +1,102 @@
+﻿Changed database context to 'Instalaciones Raquel'.
+=====================================================================
+PARTE A - CAMINO FELIZ DENTRO DE UNA TRANSACCION (TERMINA EN ROLLBACK)
+=====================================================================
+Resultado CashSessionId Account Currency SessionDate OpeningBalance OperationKey
+--------- ------------- ------- -------- ----------- -------------- ------------
+abierta cs-5d337f4afc8242dea9e60b8eccbaf946 caja C$ 2026-10-20 1000.0000 test26-open-caja
+Resultado CashSessionId Account Currency SessionDate OpeningBalance Status OpenedAt OpenedByName
+--------- ------------- ------- -------- ----------- -------------- ------ -------- ------------
+repetida cs-5d337f4afc8242dea9e60b8eccbaf946 caja C$ 2026-10-20 1000.0000 abierta 2026-10-21 04:57:27.481 +00:00 Raquel
+Resultado CashMoveId Account MoveDate MoveTime MoveType Entrada Salida SaldoAcumulado Concept Method DocumentType DocumentRef SaleId PurchaseId PayrollRunId SessionId ResponsibleName OperationKey
+--------- ---------- ------- -------- -------- -------- ------- ------ -------------- ------- ------ ------------ ----------- ------ ---------- ------------ --------- --------------- ------------
+confirmada cash-047041567744401ebdc865750819a557 caja 2026-10-20 00:00:00.000 +00:00 04:57:28 entrada 250.0000 NULL 1250.0000 Venta de contado de prueba efectivo venta FACT-TEST-26 NULL NULL NULL cs-5d337f4afc8242dea9e60b8eccbaf946 Raquel test26-caja-entrada
+Resultado CashMoveId Account MoveDate MoveTime MoveType Entrada Salida SaldoAcumulado Concept Method DocumentType DocumentRef SaleId PurchaseId PayrollRunId SessionId ResponsibleName OperationKey
+--------- ---------- ------- -------- -------- -------- ------- ------ -------------- ------- ------ ------------ ----------- ------ ---------- ------------ --------- --------------- ------------
+repetida cash-047041567744401ebdc865750819a557 caja 2026-10-20 00:00:00.000 +00:00 04:57:28 entrada 250.0000 NULL 1250.0000 Venta de contado de prueba efectivo venta FACT-TEST-26 NULL NULL NULL cs-5d337f4afc8242dea9e60b8eccbaf946 Raquel test26-caja-entrada
+Resultado CashMoveId Account MoveDate MoveTime MoveType Entrada Salida SaldoAcumulado Concept Method DocumentType DocumentRef SaleId PurchaseId PayrollRunId SessionId ResponsibleName OperationKey
+--------- ---------- ------- -------- -------- -------- ------- ------ -------------- ------- ------ ------------ ----------- ------ ---------- ------------ --------- --------------- ------------
+confirmada cash-8924167bc6944724b72f213c921ebff7 caja 2026-10-20 00:00:00.000 +00:00 04:57:28 salida NULL 100.0000 1150.0000 Pago de servicio de prueba efectivo pago_proveedor REC-TEST-26 NULL NULL NULL cs-5d337f4afc8242dea9e60b8eccbaf946 Raquel test26-caja-salida
+Resultado CashMoveId Account MoveDate MoveTime MoveType Entrada Salida SaldoAcumulado Concept Method DocumentType DocumentRef SaleId PurchaseId PayrollRunId SessionId ResponsibleName OperationKey
+--------- ---------- ------- -------- -------- -------- ------- ------ -------------- ------- ------ ------------ ----------- ------ ---------- ------------ --------- --------------- ------------
+confirmada cash-13c0aa22f4c24a30852fd28554813f27 banco 2026-10-20 00:00:00.000 +00:00 04:57:28 entrada 500.0000 NULL -84648.5400 Cobro por transferencia de prueba transferencia cobro TRF-TEST-26 NULL NULL NULL NULL Raquel test26-banco-entrada
+Warning: Null value is eliminated by an aggregate or other SET operation.
+Resultado PaymentId PayrollRunId Amount ConfirmedPaymentsTotal netTotal pendingPayment fullyPaid IdempotencyKey CashMoveId revision
+--------- --------- ------------ ------ ---------------------- -------- -------------- --------- -------------- ---------- --------
+confirmada pay-e6cbb6144b034875b98bd811a8f2d912 TEST-VALID-26-A 300.0000 300.0000 900.0000 600.0000 0 11111111-1111-1111-1111-111111111111 cash-nom-TEST-VALID-26-A 0x000000000000A577
+Resultado PaymentId PayrollRunId Amount PaymentMethod PaymentReference PaymentDate ConfirmedAt ConfirmedByName IdempotencyKey runStatus ConfirmedPaymentsTotal netTotal pendingPayment revision
+--------- --------- ------------ ------ ------------- ---------------- ----------- ----------- --------------- -------------- --------- ---------------------- -------- -------------- --------
+repetida pay-e6cbb6144b034875b98bd811a8f2d912 TEST-VALID-26-A 300.0000 transferencia TRF-TEST-A1 2026-10-20 2026-10-21 04:57:28.259 +00:00 Raquel 11111111-1111-1111-1111-111111111111 aprobada 300.0000 900.0000 600.0000 0x000000000000A577
+Resultado PaymentId PayrollRunId Amount ConfirmedPaymentsTotal netTotal pendingPayment fullyPaid IdempotencyKey CashMoveId revision
+--------- --------- ------------ ------ ---------------------- -------- -------------- --------- -------------- ---------- --------
+confirmada pay-059ab29f7b5a44a98f87365f8166137e TEST-VALID-26-A 600.0000 900.0000 900.0000 .0000 1 22222222-2222-2222-2222-222222222222 cash-nom-TEST-VALID-26-A 0x000000000000A57A
+Resultado PaymentId PayrollRunId Amount ConfirmedPaymentsTotal netTotal pendingPayment fullyPaid IdempotencyKey CashMoveId revision
+--------- --------- ------------ ------ ---------------------- -------- -------------- --------- -------------- ---------- --------
+confirmada pay-768e9d92770e4b51ab0fefcea680e92b TEST-VALID-26-EMP 250.0000 250.0000 900.0000 650.0000 0 33333333-3333-3333-3333-333333333333 cash-nom-TEST-VALID-26-EMP 0x000000000000A57F
+Resultado PaymentId PayrollRunId Amount ConfirmedPaymentsTotal netTotal pendingPayment fullyPaid IdempotencyKey CashMoveId revision
+--------- --------- ------------ ------ ---------------------- -------- -------------- --------- -------------- ---------- --------
+confirmada pay-e99bea241e214875a9efa0bb2ab9bf7f TEST-VALID-26-EMP 650.0000 900.0000 900.0000 .0000 1 44444444-4444-4444-4444-444444444444 cash-nom-TEST-VALID-26-EMP 0x000000000000A582
+Resultado CashSessionId ExpectedCash CountedCash Difference ReviewStatus
+--------- ------------- ------------ ----------- ---------- ------------
+cerrada cs-5d337f4afc8242dea9e60b8eccbaf946 1150.0000 1145.0000 -5.0000 pendiente_revision
+CashSessionId ReviewStatus ReviewedByName
+------------- ------------ --------------
+cs-5d337f4afc8242dea9e60b8eccbaf946 revisado Jhonny Garcia
+PARTE A: TODAS LAS ASERCIONES PASARON (se revierte todo con ROLLBACK).
+  Caja: apertura 1000 + entrada 250 - salida 100 = saldo 1150; arqueo 1145, diferencia -5, revisado por segunda persona.
+  Nomina: pagos 300 + 600 = 900; el reintento con la misma clave no duplico; un solo CashMove acumulado.
+ 
+=====================================================================
+PARTE B - RECHAZOS DEL SERVIDOR (FALLAN ANTES DE ESCRIBIR)
+=====================================================================
+Resultado CashSessionId Account Currency SessionDate OpeningBalance OperationKey
+--------- ------------- ------- -------- ----------- -------------- ------------
+abierta cs-d8aa5625c6fc4d29a84a09c53c6da988 caja C$ 2026-10-20 500.0000 test26-b-open
+B.2 OK - segunda apertura rechazada: 50564 Ya existe una sesion abierta para esta cuenta. Arquee y cierre la sesion vigente antes de abrir otra.
+B.3 OK - faltante sin explicacion rechazado: 50578 Hay sobrante o faltante: explique la diferencia antes de cerrar la sesion.
+Resultado CashSessionId ExpectedCash CountedCash Difference ReviewStatus
+--------- ------------- ------------ ----------- ---------- ------------
+cerrada cs-d8aa5625c6fc4d29a84a09c53c6da988 500.0000 495.0000 -5.0000 pendiente_revision
+B.4 OK - autorevision rechazada: 50583 La revision del arqueo debe realizarla una persona distinta de quien cerro la caja.
+CashSessionId ReviewStatus ReviewedByName
+------------- ------------ --------------
+cs-d8aa5625c6fc4d29a84a09c53c6da988 observado Jhonny Garcia
+B.4b OK - segunda persona reviso y dejo constancia (observado).
+B.5 OK - anulacion no autorizada rechazada: 50587 La sesion esta cerrada: la anulacion requiere un usuario administrador y queda trazada.
+B.6a OK - importe negativo rechazado: 50567 El importe debe ser mayor que cero. El tipo de movimiento determina el efecto.
+B.6b OK - efectivo en banco rechazado: 50570 El efectivo solo afecta la caja. Use la cuenta caja o registre la operacion en el banco.
+B.6c OK - transferencia en caja rechazada: 50571 Una transferencia, cheque o tarjeta afecta la cuenta bancaria, no la caja de efectivo.
+B.7a OK - sobrepago rechazado: 50592 El pago supera el pendiente de la planilla. Registre el neto pendiente restante.
+B.7b OK - pago de importe cero rechazado: 50531 El monto del pago debe ser mayor que cero.
+B.7c OK - los intentos invalidos no crearon ningun pago.
+Resultado CashSessionId Account Currency SessionDate OpeningBalance OperationKey
+--------- ------------- ------- -------- ----------- -------------- ------------
+abierta cs-54335b1e170a40e39a3db51eaadbfa45 banco C$ 2026-10-20 100.0000 test26-b-banco
+B.8.0 OK - periodo de banco abierto para poder pagar; revision de la planilla 0x000000000000A584 (no bloquea el cobro).
+B.8a OK - conciliacion fuera de orden rechazada: 50513 Solo se puede conciliar una planilla con pagos registrados.
+B.8b OK - pago_registrado sin pagos rechazado: 50596 No hay pagos confirmados para esta planilla. Registre el pago del neto pendiente antes de marcar el estado.
+Resultado PaymentId PayrollRunId Amount ConfirmedPaymentsTotal netTotal pendingPayment fullyPaid IdempotencyKey CashMoveId revision
+--------- --------- ------------ ------ ---------------------- -------- -------------- --------- -------------- ---------- --------
+confirmada pay-dad883bbd77b46ed917cb28dde3943d4 TEST-VALID-26-B 900.0000 900.0000 900.0000 .0000 1 44444444-4444-4444-4444-444444444444 cash-nom-TEST-VALID-26-B 0x000000000000A587
+B.9a OK - pago completo de 900 registrado.
+Resultado PaymentId PayrollRunId Amount PaymentMethod PaymentReference PaymentDate ConfirmedAt ConfirmedByName IdempotencyKey runStatus ConfirmedPaymentsTotal netTotal pendingPayment revision
+--------- --------- ------------ ------ ------------- ---------------- ----------- ----------- --------------- -------------- --------- ---------------------- -------- -------------- --------
+repetida pay-dad883bbd77b46ed917cb28dde3943d4 TEST-VALID-26-B 900.0000 transferencia TRF-FULL-B 2026-10-20 2026-10-21 04:57:29.694 +00:00 Raquel 44444444-4444-4444-4444-444444444444 aprobada 900.0000 900.0000 .0000 0x000000000000A587
+B.9b OK - el reintento devolvio la misma operacion (1 recibo).
+B.9c OK - un solo movimiento de caja por el total acumulado (sin segundo egreso).
+B.9d-atencion: la revision de la planilla cambio de 0x000000000000A584 a 0x000000000000A587 al registrar el pago (el servidor actualiza el estado economico de la planilla).
+B.9d OK - pago sobre saldo cero rechazado: 50591 La planilla ya no tiene saldo pendiente por pagar.
+id period status grossTotal netTotal revision
+-- ------ ------ ---------- -------- --------
+TEST-VALID-26-B TEST-VALID-26-B pago_registrado 1000.0000 900.0000 0x000000000000A589
+B.9e OK - con el neto pagado la planilla paso a pago_registrado.
+B.10 OK - pago sobre planilla no aprobada rechazado (run-mvfcuu5d-789208): 50530 Solo se puede registrar pago en planillas que han sido formalmente aprobadas.
+ 
+B.11 OK - fixtures de prueba eliminados; no queda rastro en los libros.
+ 
+INVENTARIO FINAL: movimientos historicos y de produccion sin alterar
+Account Movimientos
+------- -----------
+banco 4
+caja 2
+FIN DE LAS PRUEBAS.

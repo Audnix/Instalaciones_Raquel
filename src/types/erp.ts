@@ -41,7 +41,7 @@ export type SessionUser = {
   id: string;
   name: string;
   email: string;
-  password: string;
+  password?: string;
   hierarchy: HierarchyRole;
   areas: AreaRole[];
   active: boolean;
@@ -55,6 +55,7 @@ export type Product = {
   unitPrice: number;
   minQuantity: number;
   createdAt: string;
+  unit?: string;
   image?: string;
   model?: string;
   brand?: string;
@@ -86,7 +87,7 @@ export type KardexMove = {
   userName: string;
 };
 
-export type SaleItem = { productId: string; quantity: number; unitPrice: number };
+export type SaleItem = { productId: string; quantity: number; unitPrice: number; productName?: string };
 
 export type Sale = {
   id: string;
@@ -137,6 +138,7 @@ export type Purchase = {
   id: string;
   purchaseNumber: string;
   supplierName: string;
+  supplierId?: string;
   items: SaleItem[];
   total: number;
   status: "ordered" | "received";
@@ -191,6 +193,27 @@ export type Party = {
   contact: string;
   phone: string;
   type: "cliente" | "proveedor";
+  status?: "activo" | "pendiente" | "inactivo";
+  category?: "materiales" | "servicios" | "transporte" | "herramientas" | "aluminio" | "vidrio" | "herrajes" | "quimicos" | "otro";
+  email?: string;
+  address?: string;
+  productsServices?: string;
+  ruc?: string;
+  paymentTerms?: string;
+  observations?: string;
+  legalName?: string;
+  dispatchAddress?: string;
+  specialty?: string;
+  reviewStatus?: "pendiente" | "en_revision" | "aprobado" | "rechazado";
+  reviewEvidence?: string;
+  currency?: "NIO" | "USD";
+  leadDays?: number | null;
+  bankDetails?: string;
+  discounts?: string;
+  transportTerms?: string;
+  nextReviewDate?: string;
+  createdAt?: string;
+  updatedAt?: string;
 };
 
 export type Employee = {
@@ -256,6 +279,12 @@ export type CashMove = {
   amount: number;
   date: string;
   concept: string;
+  method?: "efectivo" | "transferencia" | "tarjeta" | "cheque" | "otro";
+  documentType?: string;
+  reference?: string;
+  sessionId?: string;
+  state?: "confirmado" | "anulado";
+  operationKey?: string;
 };
 
 export type AuditEvent = {

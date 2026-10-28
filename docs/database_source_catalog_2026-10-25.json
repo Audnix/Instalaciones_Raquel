@@ -1,0 +1,319 @@
+{
+  "date": "2026-10-25",
+  "structureScripts": 26,
+  "expectedTables": 69,
+  "catalog": [
+    {
+      "name": "00_crear_base.sql",
+      "category": "estructura",
+      "order": 1,
+      "exists": true,
+      "bytes": 289,
+      "sha256": "22c572d9fa2ca6b9b657f9033f7010566518645f73afd68909d0bfd8aadd1d63"
+    },
+    {
+      "name": "01_catalogos.sql",
+      "category": "estructura",
+      "order": 2,
+      "exists": true,
+      "bytes": 6439,
+      "sha256": "99859f543476cf82c72d36dd0651c0edc394f78a13023a8194fcd0aecc54e819"
+    },
+    {
+      "name": "02_gobierno_y_maestros.sql",
+      "category": "estructura",
+      "order": 3,
+      "exists": true,
+      "bytes": 6610,
+      "sha256": "a641e2c72d674cfce96ca0cfa06ff4a49356b3d8d93d5bf4ded40612ad44a916"
+    },
+    {
+      "name": "11_actualizar_proveedores.sql",
+      "category": "estructura",
+      "order": 4,
+      "exists": true,
+      "bytes": 2716,
+      "sha256": "fb633b9bc406cdf349944f28977acb5dc869902f10e37c917f1f4418475e4ae9"
+    },
+    {
+      "name": "03_inventario_y_comercial.sql",
+      "category": "estructura",
+      "order": 5,
+      "exists": true,
+      "bytes": 8593,
+      "sha256": "8ab76b709de31b28779c6a3ddc099ac0b976cd4188d52253167cadbe40163a0d"
+    },
+    {
+      "name": "04_produccion_proyectos.sql",
+      "category": "estructura",
+      "order": 6,
+      "exists": true,
+      "bytes": 3019,
+      "sha256": "ada817e55eb07050968b643e6389e6f05814f3b95d10b38cb175d096bdfdbc54"
+    },
+    {
+      "name": "05_finanzas_nomina.sql",
+      "category": "estructura",
+      "order": 7,
+      "exists": true,
+      "bytes": 8142,
+      "sha256": "96d11b885a3e81cd707b39e4166a317ca6bc0d9862461380c7beaeb230cf71ca"
+    },
+    {
+      "name": "06_vistas.sql",
+      "category": "estructura",
+      "order": 8,
+      "exists": true,
+      "bytes": 10597,
+      "sha256": "bd34a639b09fbbd713fdb35bf64c0fd39d06cf927538daaae38ed4d2ed0fb6c8"
+    },
+    {
+      "name": "12_sincronizacion_proveedores.sql",
+      "category": "estructura",
+      "order": 9,
+      "exists": true,
+      "bytes": 8219,
+      "sha256": "365e6fa58bdfbc6554997a9d3ba88a7a1b343718810bf9f129981c477f2446db"
+    },
+    {
+      "name": "13_autenticacion_y_sesiones.sql",
+      "category": "estructura",
+      "order": 10,
+      "exists": true,
+      "bytes": 9272,
+      "sha256": "443a96532f2bb007094f3369de95a337a2f96a374edbc25f2e8ad19232ff8c41"
+    },
+    {
+      "name": "14_recuperacion_contrasena.sql",
+      "category": "estructura",
+      "order": 11,
+      "exists": true,
+      "bytes": 4945,
+      "sha256": "a91d3368903961cfe66a69b25800114841a0f2cfaf17ca83250a4afdd45c9c4d"
+    },
+    {
+      "name": "15_expedientes_proyectos.sql",
+      "category": "estructura",
+      "order": 12,
+      "exists": true,
+      "bytes": 9709,
+      "sha256": "4dd90abe222b976814174f95b8961f34b6e1a01d9084145b300e6f9269a4a851"
+    },
+    {
+      "name": "16_talento_humano_base.sql",
+      "category": "estructura",
+      "order": 13,
+      "exists": true,
+      "bytes": 71323,
+      "sha256": "7be6dd1c086f381432e1cfdc90d497d1f0f7eb7d96e48c38641e4b2645975bcf"
+    },
+    {
+      "name": "17_modulo_nomina_completo.sql",
+      "category": "estructura",
+      "order": 14,
+      "exists": true,
+      "bytes": 80646,
+      "sha256": "422f345eb82e955a4758e2b2b6261502eb618d48db2796e5783de9f0311af22a"
+    },
+    {
+      "name": "07_procedimiento_sincronizacion.sql",
+      "category": "estructura",
+      "order": 15,
+      "exists": true,
+      "bytes": 34783,
+      "sha256": "d96521f04c48e4a2a3cef54a0b4743d5aa7a988aeae5924f656819c94b12cb24"
+    },
+    {
+      "name": "25_mejoras_gestion_talento_humano_y_nomina.sql",
+      "category": "estructura",
+      "order": 16,
+      "exists": true,
+      "bytes": 14917,
+      "sha256": "f1987053a8d8cdf4d4ddc1ebd2ff85db399e16a085484f5cac9d070c1ed2c407"
+    },
+    {
+      "name": "25_operaciones_hr_nomina.sql",
+      "category": "estructura",
+      "order": 17,
+      "exists": true,
+      "bytes": 25146,
+      "sha256": "adf58ba31a22be93b3ada6abe3cf57ce80039f252fa1ea98063aff5cd7bb1e30"
+    },
+    {
+      "name": "26_integridad_caja_nomina_pagos.sql",
+      "category": "estructura",
+      "order": 18,
+      "exists": true,
+      "bytes": 118846,
+      "sha256": "61102f751cb255956b4e356ec225ebaf2d7a3dad713b19023bbce851a00852d3"
+    },
+    {
+      "name": "19_directorio_proveedores.sql",
+      "category": "estructura",
+      "order": 19,
+      "exists": true,
+      "bytes": 13592,
+      "sha256": "771f5a2f1557e070fe01b12d20188837c2131e7e7d552687e6d529312602d016"
+    },
+    {
+      "name": "28_ajuste_pagos_caja.sql",
+      "category": "estructura",
+      "order": 20,
+      "exists": true,
+      "bytes": 27512,
+      "sha256": "d5d70c45ebe55489f656cec77b0fe2e5ef7eaf4580d1f2cf7742dac8dc7377a8"
+    },
+    {
+      "name": "29_coherencia_caja_nomina_snapshot.sql",
+      "category": "estructura",
+      "order": 21,
+      "exists": true,
+      "bytes": 24374,
+      "sha256": "340d040044287f9c1b2e16a4a4f9232623ba4031784bfa9f209e86d93f96aca7"
+    },
+    {
+      "name": "30_pagos_individuales_atomicos.sql",
+      "category": "estructura",
+      "order": 22,
+      "exists": true,
+      "bytes": 13122,
+      "sha256": "f10d5a1e7ec397d127959cb02437b30333b9c0b0b59db27c79e06283ee05b054"
+    },
+    {
+      "name": "31_reglas_periodo_y_devengo_nomina.sql",
+      "category": "estructura",
+      "order": 23,
+      "exists": true,
+      "bytes": 34567,
+      "sha256": "5038008c67470d591269c19d62c21f7179bd2c17cd7e64b450bd53033ba59f45"
+    },
+    {
+      "name": "32_conservar_enlaces_snapshot.sql",
+      "category": "estructura",
+      "order": 24,
+      "exists": true,
+      "bytes": 12698,
+      "sha256": "9214a9d0abe7268ca92c85fbe15dfb42d249df8375a63e06902ad9d5f20aa532"
+    },
+    {
+      "name": "33_eventos_novedades_nomina.sql",
+      "category": "estructura",
+      "order": 25,
+      "exists": true,
+      "bytes": 994,
+      "sha256": "d4d07d0da25c790b30430001e49c246a1ffef994d0fd51d12920d56f815b87bd"
+    },
+    {
+      "name": "34_preservar_proveedores_guardado_global.sql",
+      "category": "estructura",
+      "order": 26,
+      "exists": true,
+      "bytes": 3695,
+      "sha256": "08fb5a5426c3d179f8c61a6a868ce63abb9bcb61fdc049c76732a155b76e0bda"
+    },
+    {
+      "name": "21_mejoras_directorio_proveedores.sql",
+      "category": "datos_opcionales",
+      "order": null,
+      "exists": true,
+      "bytes": 15684,
+      "sha256": "70e54c6b0cacf3eb8dc27456adc654d003e7e8543086cd02014a0c20c46acbd3"
+    },
+    {
+      "name": "00_reconstruir_desde_cero.sql",
+      "category": "destructivo",
+      "order": null,
+      "exists": true,
+      "bytes": 668,
+      "sha256": "e663bbbb56c93929ad1150d54268d6f61216524238cc9503cec13f7279c883bc"
+    },
+    {
+      "name": "08_semilla.sql",
+      "category": "datos_opcionales",
+      "order": null,
+      "exists": true,
+      "bytes": 7223,
+      "sha256": "f9a973e0366b9d4baef6d001a25f5417ebc8644b13494d754a35d47cd331b010"
+    },
+    {
+      "name": "09_login_aplicacion.sql",
+      "category": "acceso_separado",
+      "order": null,
+      "exists": true,
+      "bytes": 1740,
+      "sha256": "fe446b76c837191a2d3c9133c2894467e6d20fd5d64cc8e43bbfefca8b59e5a6"
+    },
+    {
+      "name": "10_verificar.sql",
+      "category": "verificacion",
+      "order": null,
+      "exists": true,
+      "bytes": 7213,
+      "sha256": "dfcbc3d54ff287e044c250b0c22fbdfe7ab626357b753aa0a59a1af2e4cd92d2"
+    },
+    {
+      "name": "18_verificar_usuarios.sql",
+      "category": "verificacion",
+      "order": null,
+      "exists": true,
+      "bytes": 4366,
+      "sha256": "242133d2b2127f99468f02993f607d752efbb7fe2a5a6b35740b3017360fffe0"
+    },
+    {
+      "name": "19_carga_integral_datos_reales.sql",
+      "category": "datos_opcionales",
+      "order": null,
+      "exists": true,
+      "bytes": 149584,
+      "sha256": "7c7187ca09496854b3f4483c84a65f58a6b24005484e7533e0b7978fa26f5344"
+    },
+    {
+      "name": "20_verificar_integracion_total.sql",
+      "category": "verificacion",
+      "order": null,
+      "exists": true,
+      "bytes": 16540,
+      "sha256": "79f5eecd5c86a570975f49c5ee7216219c6037fa636cfe1178aff98dd93b0ba6"
+    },
+    {
+      "name": "22_verificar_modulo_proveedores.sql",
+      "category": "verificacion",
+      "order": null,
+      "exists": true,
+      "bytes": 4083,
+      "sha256": "7515d50d391505ebafd85f82ae9d52f0c1243d194899d9c14e87f1bc65e0a673"
+    },
+    {
+      "name": "23_verificar_talento_humano_y_nomina.sql",
+      "category": "verificacion",
+      "order": null,
+      "exists": true,
+      "bytes": 7606,
+      "sha256": "384efd56f7464dccd4b65de613dd0a06e3459d1f47dacba30edb7395768fb674"
+    },
+    {
+      "name": "24_cargar_registros_talento_humano_y_nomina.sql",
+      "category": "datos_opcionales",
+      "order": null,
+      "exists": true,
+      "bytes": 34759,
+      "sha256": "a10c997bde3b68ff9347522bd285def4b5022ccfabe83084f6cb68266eeb3c74"
+    },
+    {
+      "name": "27_reporte_inconsistencias.sql",
+      "category": "verificacion",
+      "order": null,
+      "exists": true,
+      "bytes": 18582,
+      "sha256": "c58cc01d2063d76bd0e5c003b532b1a36f8774c3d2bc05c344e5a800fd3f290d"
+    },
+    {
+      "name": "SQLQuery3Verificar.sql",
+      "category": "verificacion",
+      "order": null,
+      "exists": true,
+      "bytes": 1633,
+      "sha256": "6751abc684e4e77c277249951df3254b735262198a03348adccbd2947f141de4"
+    }
+  ]
+}

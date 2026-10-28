@@ -1,0 +1,3 @@
+﻿Changed database context to 'master'.
+Msg 50000, Level 16, State 1, Server Laptop-Jhonny\MSSQLSERVER2025, Line 3
+La base ya existe. Este paquete es solo para instalacion nueva; revisar migraciones individuales con respaldo.

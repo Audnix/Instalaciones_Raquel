@@ -1,0 +1,138 @@
+﻿Changed database context to 'master'.
+database_name                                                                                                                    create_date             state_desc                                                  
+-------------------------------------------------------------------------------------------------------------------------------- ----------------------- ------------------------------------------------------------
+Raquel_Schema_Check_20261025_99ef80cc                                                                                            2026-10-25 18:35:51.527 ONLINE                                                      
+
+(1 rows affected)
+Changed database context to 'Raquel_Schema_Check_20261025_99ef80cc'.
+
+(2 rows affected)
+
+(12 rows affected)
+
+(5 rows affected)
+
+(8 rows affected)
+
+(6 rows affected)
+
+(4 rows affected)
+
+(13 rows affected)
+
+(5 rows affected)
+Resultado       
+----------------
+Catálogos listos
+
+(1 rows affected)
+Changed database context to 'Raquel_Schema_Check_20261025_99ef80cc'.
+
+(1 rows affected)
+Changed database context to 'Raquel_Schema_Check_20261025_99ef80cc'.
+
+(0 rows affected)
+
+(0 rows affected)
+Changed database context to 'Raquel_Schema_Check_20261025_99ef80cc'.
+Changed database context to 'Raquel_Schema_Check_20261025_99ef80cc'.
+Changed database context to 'Raquel_Schema_Check_20261025_99ef80cc'.
+Changed database context to 'Raquel_Schema_Check_20261025_99ef80cc'.
+Resultado     Cantidad   
+------------- -----------
+Vistas listas          28
+
+(1 rows affected)
+Changed database context to 'Raquel_Schema_Check_20261025_99ef80cc'.
+Changed database context to 'Raquel_Schema_Check_20261025_99ef80cc'.
+Changed database context to 'Raquel_Schema_Check_20261025_99ef80cc'.
+Changed database context to 'Raquel_Schema_Check_20261025_99ef80cc'.
+
+(0 rows affected)
+Changed database context to 'Raquel_Schema_Check_20261025_99ef80cc'.
+
+(6 rows affected)
+Changed database context to 'Raquel_Schema_Check_20261025_99ef80cc'.
+
+(5 rows affected)
+
+(8 rows affected)
+
+(0 rows affected)
+Changed database context to 'Raquel_Schema_Check_20261025_99ef80cc'.
+save_procedure_id
+-----------------
+        167671645
+
+(1 rows affected)
+Changed database context to 'Raquel_Schema_Check_20261025_99ef80cc'.
+Migración 25 (Mejoras operativas de Talento Humano y Nómina) ejecutada con éxito.
+Changed database context to 'Raquel_Schema_Check_20261025_99ef80cc'.
+control      tabla                                                                                                                            filas               
+------------ -------------------------------------------------------------------------------------------------------------------------------- --------------------
+respaldos_26 bak_26_AccountingEntries                                                                                                                            0
+respaldos_26 bak_26_CashMoves                                                                                                                                    0
+respaldos_26 bak_26_FinanceMoves                                                                                                                                 0
+respaldos_26 bak_26_PayrollPayments                                                                                                                              0
+respaldos_26 bak_26_PayrollRunItems                                                                                                                              0
+respaldos_26 bak_26_PayrollRuns                                                                                                                                  0
+control         restriccion                                                                                                                      tipo                                                        
+--------------- -------------------------------------------------------------------------------------------------------------------------------- ------------------------------------------------------------
+integridad_caja CK_CashMoves_AmountPositivo                                                                                                      CHECK_CONSTRAINT                                            
+integridad_caja CK_CashMoves_MoveState                                                                                                           CHECK_CONSTRAINT                                            
+integridad_caja CK_CashMoves_Method                                                                                                              CHECK_CONSTRAINT                                            
+integridad_caja CK_CashMoves_DocumentType                                                                                                        CHECK_CONSTRAINT                                            
+integridad_caja CK_CashMoves_AperturaEntrada                                                                                                     CHECK_CONSTRAINT                                            
+integridad_caja CK_CashMoves_Account                                                                                                             CHECK_CONSTRAINT                                            
+integridad_caja CK_CashMoves_MoveType                                                                                                            CHECK_CONSTRAINT                                            
+integridad_caja PK_CashMoves                                                                                                                     CLUSTERED                                                   
+integridad_caja UQ_CashMoves_OperationKey                                                                                                        NONCLUSTERED                                                
+control      Account              SaldoInicial                             TotalEntradas                            TotalSalidas                             SaldoFinal                               Movimientos UltimoMovimiento                             
+------------ -------------------- ---------------------------------------- ---------------------------------------- ---------------------------------------- ---------------------------------------- ----------- ---------------------------------------------
+control         Account              MoveDate                                      CashMoveId                                                                                           Concept                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  Method                         DocumentType                             Entrada               Salida                SaldoAcumulado                          
+--------------- -------------------- --------------------------------------------- ---------------------------------------------------------------------------------------------------- ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- ------------------------------ ---------------------------------------- --------------------- --------------------- ----------------------------------------
+control       CashSessionId                                                                                        Account                        Currency   SessionDate      OpeningBalance        Status                         OpenedAt                                      OpenedByName                                                                                                                                                                                                                                     ClosedAt                                      ClosedByAppUserId                                                                                    CountedCash           ExpectedCash          Difference            Explanation                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              ReviewStatus                   ReviewedByName                                                                                                                                                                                                                                   ReviewedAt                                    Movimientos
+------------- ---------------------------------------------------------------------------------------------------- ------------------------------ ---------- ---------------- --------------------- ------------------------------ --------------------------------------------- ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ --------------------------------------------- ---------------------------------------------------------------------------------------------------- --------------------- --------------------- --------------------- ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- ------------------------------ ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ --------------------------------------------- -----------
+control        PayrollRunId                                                                                         Period                                   Status                         CalculatedAt                                  CalculationStale Gross                 TotalDeductions       Net                   ConfirmedPaymentsTotal items       deduccionesDetalle                       estadoCalculo         coherenciaCabecera
+-------------- ---------------------------------------------------------------------------------------------------- ---------------------------------------- ------------------------------ --------------------------------------------- ---------------- --------------------- --------------------- --------------------- ---------------------- ----------- ---------------------------------------- --------------------- ------------------
+control      PayrollRunId                                                                                         Status                         netoAprobado          pagosConfirmados                         pendiente                                acumuladoCabecera    
+------------ ---------------------------------------------------------------------------------------------------- ------------------------------ --------------------- ---------------------------------------- ---------------------------------------- ---------------------
+control            indice                                                                                                                           is_unique filter_definition                                                                                                                                                                                                                                               
+------------------ -------------------------------------------------------------------------------------------------------------------------------- --------- ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+idempotencia_pagos UQ_AccountingEntries_OperationKey                                                                                                        1 ([OperationKey] IS NOT NULL)                                                                                                                                                                                                                                    
+idempotencia_pagos UQ_CashMoves_OperationKey                                                                                                                1 ([OperationKey] IS NOT NULL)                                                                                                                                                                                                                                    
+idempotencia_pagos UQ_CashSessions_Abierta                                                                                                                  1 ([Status]=N'abierta')                                                                                                                                                                                                                                           
+idempotencia_pagos UQ_CashSessions_OperationKey                                                                                                             1 ([OperationKey] IS NOT NULL)                                                                                                                                                                                                                                    
+idempotencia_pagos UQ_FinanceMoves_OperationKey                                                                                                             1 ([OperationKey] IS NOT NULL)                                                                                                                                                                                                                                    
+idempotencia_pagos UQ_PayrollPayments_IdempotencyKey                                                                                                        1 ([IdempotencyKey] IS NOT NULL)                                                                                                                                                                                                                                  
+control          cashProtegidos asientosProtegidos finanzasProtegidas
+---------------- -------------- ------------------ ------------------
+efectos_servidor              0                  0                  0
+Changed database context to 'Raquel_Schema_Check_20261025_99ef80cc'.
+Changed database context to 'Raquel_Schema_Check_20261025_99ef80cc'.
+28: respaldo de control (solo conteos, no copia masiva)
+PagosAntes  MovimientosCajaAntes SesionesCajaAntes
+----------- -------------------- -----------------
+          0                    0                 0
+28: PayrollPayments.EmployeeId ahora admite NULL (pago por planilla).
+28: verificacion
+Account SaldoSugerido                            Origen         SesionOrigen                                                                                        
+------- ---------------------------------------- -------------- ----------------------------------------------------------------------------------------------------
+banco                                      .0000 sin_sesion     NULL                                                                                                
+caja                                       .0000 sin_sesion     NULL                                                                                                
+Columna                                                                                                                          Nulabilidad   
+-------------------------------------------------------------------------------------------------------------------------------- --------------
+EmployeeId                                                                                                                       NULL permitido
+PagosDespues MovimientosCajaDespues SesionesCajaDespues
+------------ ---------------------- -------------------
+           0                      0                   0
+Account                        SaldoInicial          TotalEntradas                            TotalSalidas                             SaldoFinal                               Movimientos
+------------------------------ --------------------- ---------------------------------------- ---------------------------------------- ---------------------------------------- -----------
+28: migracion aplicada correctamente.
+Changed database context to 'Raquel_Schema_Check_20261025_99ef80cc'.
+29: inicio
+29: PayrollRuns.PaidAt ahora admite NULL (el borrador no esta pagado).
+Changed database context to 'Raquel_Schema_Check_20261025_99ef80cc'.
+Changed database context to 'Raquel_Schema_Check_20261025_99ef80cc'.
+Changed database context to 'Raquel_Schema_Check_20261025_99ef80cc'.
+Changed database context to 'Raquel_Schema_Check_20261025_99ef80cc'.

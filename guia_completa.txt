@@ -1,0 +1,572 @@
+<USER_REQUEST>
+GUÍA UNIFICADA DE MEJORA DEL SISTEMA INSTALACIONES RAQUEL
+
+Completa y mejora Instalaciones Raquel como un sistema administrativo integrado, fácil de utilizar y coherente con los cuatro cortes del proyecto.
+
+Conserva los datos, la autenticación segura existente y la identidad visual. Revisa lo implementado antes de modificarlo. Distingue funciones propuestas, implementadas y verificadas.
+
+1. ACCESO Y CREACIÓN DE CUENTAS
+
+Cada persona debe iniciar sesión con su propio correo electrónico y contraseña.
+
+Conserva la cuenta superadministradora admin@raquel.com y su contraseña actual. No la recrees ni reinstales usuarios de demostración.
+
+Implementa este recorrido:
+Superadministrador inicia sesión → crea usuario → asigna rol y área → entrega invitación segura → usuario establece su contraseña → inicia sesión.
+
+No permitas que el usuario elija libremente su rol al entrar.
+
+Las invitaciones serán individuales, de un solo uso y con vencimiento. Reenviar debe invalidar la anterior.
+
+Si no existe servicio de correo configurado, informa esa condición y ofrece un procedimiento autorizado de entrega; no anuncies “Correo enviado” sin confirmación.
+
+Incluye recuperación segura, cierre de sesión, revocación de sesiones y protección ante intentos repetidos.
+
+Las contraseñas deben almacenarse mediante hash seguro. Nunca deben aparecer en respuestas, registros o pantallas administrativas.
+
+La cuenta técnica raquel_erp_app conecta la API con SQL Server; no corresponde a un empleado.
+
+2. ROLES, ÁREAS Y PERMISOS
+
+Mantén los perfiles de la documentación:
+
+Superadministrador:
+Configuración global, administración de accesos y supervisión, con auditoría.
+
+Administrador:
+Gestión autorizada de su área y usuarios dentro de su alcance.
+
+Usuario estándar:
+Operaciones diarias autorizadas, sin cambiar reglas globales.
+
+Restringido o invitado:
+Consulta limitada y funciones expresamente permitidas.
+
+Combina:
+Rol + Área + Módulo + Acción + Alcance.
+
+Define acciones:
+Consultar, Crear, Editar, Revisar, Aprobar, Anular, Exportar, Cerrar y Administrar.
+
+Un administrador no puede otorgarse privilegios superiores.
+
+Distingue administrar cuentas de consultar información confidencial.
+
+Aplica permisos en la API, búsquedas, indicadores, archivos y exportaciones. Ocultar botones no constituye autorización suficiente.
+
+3. INICIO Y NAVEGACIÓN PERSONALIZADOS
+
+Después del acceso, muestra funciones correspondientes al puesto:
+
+Ventas: clientes, cotizaciones, pedidos y cobros autorizados.
+Producción: órdenes, materiales y bloqueos.
+Inventario: existencias, reservas y recepciones.
+Compras: solicitudes, órdenes y proveedores.
+Finanzas y Contabilidad: obligaciones, conciliaciones y cierres.
+Talento humano: expedientes y solicitudes autorizadas.
+Trabajador: información y documentos propios.
+Invitado: consultas permitidas.
+
+Incluye una bandeja “Mis tareas” con pendientes reales y accesos recientes.
+
+No satures al usuario con módulos ajenos a sus responsabilidades.
+
+4. DISEÑO COMÚN
+
+Conserva logo, colores y estilo de Instalaciones Raquel, mejorando contraste, legibilidad y distribución.
+
+Cada pantalla tendrá:
+Título, descripción breve, filtros, acciones, resumen, registros y detalle.
+
+Usa columnas específicas. No reutilices “Código, Detalle, Estado y Monto” cuando no describen la información.
+
+Incluye búsqueda, filtros, paginación y ordenamiento donde corresponda.
+
+Unifica fechas, moneda, decimales y unidades.
+
+Diferencia carga, error, vacío y falta de permisos.
+
+Los iconos acompañan al texto. No dependas únicamente de colores o de arrastrar elementos.
+
+Permite teclado, foco visible, ampliación y uso móvil.
+
+5. FORMULARIOS Y GUARDADO
+
+Explica campos obligatorios y evita pedir información repetida.
+
+Valida en interfaz y servidor.
+
+Conserva los datos cuando ocurra un error y advierte antes de perder cambios.
+
+Confirma acciones importantes mostrando documento, importe y consecuencias.
+
+Distingue:
+Conexión disponible, operación en proceso, guardado confirmado y error.
+
+“SQL conectado” o “Sin cambios pendientes” no demuestran que una venta, pago o recepción se haya ejecutado.
+
+Protege contra doble clic y solicitudes repetidas desde el servidor.
+
+6. ACUERDOS DEL NEGOCIO
+
+Documenta:
+Líneas reales, productos, servicios, unidades, bodegas, responsables, autorizaciones, costos, crédito, descuentos y cierres.
+
+Confirma si los electrodomésticos son parte real del negocio. Si son datos demostrativos, sepáralos de la operación sin borrar registros relacionados.
+
+Define estados y transiciones de cada documento.
+
+Separa políticas internas de obligaciones legales.
+
+7. RECORRIDOS CONECTADOS
+
+Relaciona el proceso comercial:
+Cliente → Cotización → Pedido o proyecto → Producción → Entrega o instalación → Facturación → Cobro → Contabilidad.
+
+Adapta la secuencia al tipo de operación; no impongas el mismo momento de facturación o cobro para todos los casos.
+
+Relaciona abastecimiento:
+Necesidad → Solicitud → Autorización → Compra → Recepción → Inventario → Obligación → Pago.
+
+Utiliza identificadores persistentes. No relaciones documentos únicamente por nombres o textos.
+
+8. CLIENTES
+
+Convierte el directorio en un expediente con:
+Contactos, direcciones, cotizaciones, proyectos, documentos, entregas y saldos autorizados.
+
+Permite varias direcciones de instalación y personas de contacto.
+
+Controla duplicados y conserva historial.
+
+Distingue saldo total, vencido y documentos en disputa.
+
+No publiques deudas ni información personal en enlaces públicos.
+
+Separa preferencias comerciales de información necesaria para prestar el servicio.
+
+9. COTIZACIONES Y VENTAS
+
+Distingue cotización, pedido, factura, entrega y cobro.
+
+La cotización tendrá:
+Versión, vigencia, cliente, productos, medidas, cantidades, precios, descuentos, condiciones e instalación cuando corresponda.
+
+Conserva evidencia de aceptación.
+
+Convertir una cotización no debe duplicar documentos.
+
+Una proforma no genera automáticamente ingreso, cobro ni salida de inventario.
+
+Valida disponibilidad, crédito, descuentos y reservas desde el servidor.
+
+Soporta entregas, cobros y devoluciones parciales.
+
+10. PROMOCIONES Y COMPROBANTES
+
+Define vigencia, productos, mínimos, condiciones y compatibilidad entre promociones.
+
+Explica si los umbrales incluyen impuestos y descuentos.
+
+Los descuentos excepcionales requieren autorización y motivo.
+
+Configura comprobantes, series, numeración y datos fiscales según reglas verificadas.
+
+Genera numeración desde el servidor y evita duplicados.
+
+Conserva anulaciones y documentos correctivos.
+
+Un PDF o QR no constituye autorización fiscal. El QR público no debe revelar información privada.
+
+11. PRODUCCIÓN
+
+Utiliza “Órdenes de taller” o “Producción” como título operativo. Un tablero Kanban no demuestra que exista Scrum.
+
+Cada tarjeta mostrará:
+Orden, trabajo, cliente/proyecto, cantidad, unidad, responsable, fecha y bloqueos.
+
+El detalle incluirá:
+Medidas, plano versionado, materiales, tareas, tiempos, calidad, costos e historial.
+
+Mover tarjetas ejecutará transiciones autorizadas y auditadas.
+
+Contempla trabajo parcial, retrabajo, cancelación e instalación.
+
+Separa materiales planificados, reservados y consumidos. Evita descuentos duplicados.
+
+No confundas fabricación terminada con entrega aceptada.
+
+12. INVENTARIO Y PEPS
+
+Muestra:
+Código, producto, unidad, bodega, existencia, reservado, disponible, mínimo y condición.
+
+Sustituye expresiones compactas como “120@140” por un detalle legible de lotes.
+
+Gestiona entradas, salidas, transferencias, reservas, ajustes, conteos y devoluciones.
+
+Cada movimiento tendrá documento origen, responsable y motivo.
+
+Aplica PEPS conforme a la política documentada y conserva sus asignaciones históricas.
+
+Controla ventas simultáneas para evitar existencias negativas.
+
+Define conversiones de piezas, barras, metros y metros cuadrados. No sumes unidades incompatibles.
+
+Registra dimensiones y remanentes cuando sean necesarios.
+
+Los ajustes requieren revisión y evidencia según su alcance.
+
+13. COMPRAS
+
+Implementa:
+Solicitud → Revisión → Autorización → Orden → Recepción → Verificación de factura → Obligación.
+
+Separa recepción de pago.
+
+Cada orden incluirá proveedor, productos, unidades, cantidades, precios, condiciones y fechas.
+
+Soporta recepciones parciales, diferencias, rechazo y devolución.
+
+Relaciona recepción, lotes y bodega.
+
+Compara orden, recepción y factura cuando corresponda.
+
+Reintentar una recepción no debe duplicar inventario.
+
+14. PROVEEDORES
+
+Incluye:
+Identificación, contactos, categoría, dirección, información fiscal pertinente, condiciones y documentos.
+
+Controla duplicados sin confundir empresas distintas con nombres similares.
+
+Conserva cambios e historial de compras.
+
+Evalúa calidad, entregas y diferencias con período y evidencia.
+
+El estado “Activo” no representa certificación legal.
+
+Protege cambios bancarios mediante revisión.
+
+15. PROYECTOS E INSTALACIONES
+
+Separa autorización, etapa operativa y situación de cobro.
+
+Gestiona presupuesto, materiales, equipo, actividades, fechas y costos reales.
+
+Calcula avance con hitos documentados. Las modificaciones manuales requieren motivo.
+
+Incluye seguridad, evidencias, pendientes, entrega y garantías.
+
+Una fotografía no equivale por sí sola a aceptación contractual.
+
+Permite comparar presupuesto y costo real con explicación de desviaciones.
+
+16. CAJA
+
+Implementa apertura, responsable, saldo inicial, entradas, salidas, arqueo y cierre.
+
+Muestra:
+Fecha, referencia, tipo, concepto, medio, importe, responsable y estado.
+
+No coloques fechas bajo la columna “Estado”.
+
+Calcula saldo para caja, moneda y período seleccionados:
+Saldo inicial + entradas − salidas.
+
+Distingue efectivo, transferencias y otros medios.
+
+Relaciona cobros, anticipos, devoluciones y depósitos.
+
+Registra diferencias de arqueo sin generar descuentos automáticos a trabajadores.
+
+Protege cajas cerradas y conserva correcciones.
+
+17. BANCOS
+
+Gestiona cuentas separadas por entidad y moneda.
+
+Distingue saldo contable, saldo de estado de cuenta y diferencia de conciliación.
+
+Investiga saldos negativos sin ocultarlos ni asumir su causa.
+
+Las transferencias tendrán movimientos vinculados y efectos coherentes.
+
+Detecta duplicados al importar estados de cuenta.
+
+Distingue importación de conciliación completada.
+
+Protege cuentas y referencias bancarias.
+
+18. CUENTAS POR COBRAR Y PAGAR
+
+Relaciona documentos, vencimientos, pagos y aplicaciones.
+
+Soporta pagos parciales, anticipos y ajustes.
+
+No apliques un mismo pago dos veces.
+
+Separa deuda, anticipo y pago sin aplicar.
+
+Muestra antigüedad con fecha de corte.
+
+Las comunicaciones externas requieren autorización y destinatarios verificados.
+
+19. CONTABILIDAD
+
+Incluye:
+Catálogo, diario, mayor, balanza, estados financieros, conciliaciones y cierres.
+
+Permite asientos con múltiples líneas.
+
+Valida cuentas, período, origen e igualdad de débitos y créditos.
+
+Estar balanceado no demuestra clasificación correcta.
+
+Distingue borrador y contabilizado.
+
+Separa devengo de pago para evitar duplicar gastos.
+
+Concilia auxiliares de inventario, clientes, proveedores, caja, bancos y nómina.
+
+Protege períodos cerrados. Corrige mediante ajustes o reversos conservando historia.
+
+20. COSTOS
+
+Separa:
+Materiales, mano de obra, indirectos, producción, costo vendido y gastos.
+
+Relaciona costos con lote, orden, proyecto y período.
+
+Define bases de distribución y evita duplicar mano de obra.
+
+Compara costo planificado y real.
+
+Distingue:
+Margen bruto = ventas netas − costo de ventas.
+Margen porcentual = margen bruto / ventas netas.
+Participación = ventas de la línea / ventas totales.
+Recargo = margen / costo.
+
+Controla denominadores cero.
+
+Revisa las etiquetas actuales: participación en ventas no debe presentarse como margen.
+
+21. FINANZAS Y ESTADÍSTICA
+
+Distingue resultado contable, efectivo, presupuesto y proyección.
+
+Cada indicador tendrá fórmula, período, fecha de corte y fuente.
+
+No compares un mes parcial con uno completo sin advertencia y criterio comparable.
+
+Ausencia de registros no demuestra ausencia real de actividad.
+
+No interpretes menor gasto como mejora automática.
+
+El punto de equilibrio utilizará costos y margen de contribución definidos, con supuestos visibles.
+
+Los pronósticos identificarán datos, método, horizonte y error evaluado.
+
+No mezcles presupuestos, históricos importados y operaciones actuales sin señalar origen y alcance.
+
+22. MERCADOTECNIA
+
+Organiza:
+Catálogo, promociones, campañas, oportunidades y resultados.
+
+Publica productos, precios e imágenes autorizados.
+
+Aclara moneda, impuestos, instalación, transporte y vigencia.
+
+Los enlaces externos necesitan una dirección accesible; una IP privada no sirve para compartir fuera de la red.
+
+Define rankings por unidades, ingresos, margen o rotación.
+
+La clasificación ABC tendrá variable, período y límites documentados.
+
+No atribuyas automáticamente ventas a campañas.
+
+No envíes mensajes sin autorización.
+
+23. TALENTO HUMANO Y DERECHOS
+
+Incluye:
+Personal, contratos, vacaciones, permisos, asistencia, seguridad, documentos y solicitudes.
+
+Separa relación laboral, disponibilidad y estado de cuenta.
+
+Protege salarios, documentos médicos e incidencias.
+
+Mantén historial de cargo, área y salario.
+
+Las solicitudes tendrán responsable, estado, respuesta e historial.
+
+No automatices sanciones o descuentos por incidencias de asistencia.
+
+Ofrece orientación accesible con fuentes revisadas y fecha de actualización.
+
+El contenido público no mostrará expedientes privados.
+
+24. NÓMINA
+
+Implementa:
+Borrador → Calculada → Revisada → Aprobada → Pago registrado → Conciliada → Cerrada.
+
+Separa devengado, deducciones, neto, aportes patronales y provisiones.
+
+Documenta entradas, bases, reglas, redondeo y resultados.
+
+Contempla novedades autorizadas, períodos incompletos y ajustes.
+
+Editar entradas invalida cálculos y aprobaciones afectados.
+
+Distingue archivo bancario, envío y pago confirmado.
+
+Soporta pagos parciales y fallidos sin duplicación.
+
+Conserva comprobantes privados y ajustes posteriores auditados.
+
+25. GOBIERNO DEL SISTEMA
+
+Reportes:
+Filtros, período, origen, fecha y exportación autorizada.
+
+Auditoría:
+Identidad autenticada, operación, registro, resultado e información pertinente del cambio.
+
+No registres contraseñas o tokens.
+
+Las alertas de integridad abrirán incidentes conservando evidencia.
+
+Usuarios:
+Creación, invitación, activación, permisos, desactivación y sesiones.
+
+Cumplimiento:
+Obligación, norma, aplicabilidad, responsable, evidencia y revisión.
+
+Continuidad:
+Estado de servicios, errores, respaldos y restauraciones verificadas.
+
+No presentes “100 % legal”, “certificado” o “inviolable” sin fundamento específico.
+
+26. REGLAS DE NICARAGUA
+
+Verifica fuentes oficiales, reformas, vigencias y aplicabilidad antes de fijar reglas.
+
+Documenta:
+Norma, artículo, fuente, parámetros, responsable y pruebas.
+
+Considera los marcos pertinentes de tributación, trabajo, seguridad, datos personales, INSS e INATEC.
+
+No universalices porcentajes, topes, retenciones, anticipos, salarios mínimos o plazos.
+
+Distingue obligación legal de política interna.
+
+Exportar un archivo no equivale a presentar una declaración.
+
+No inventes conexiones con DGI, bancos u otras instituciones.
+
+27. EXPERIENCIA CREATIVA Y ÚTIL
+
+Implementa:
+“Qué falta para continuar”, con pendientes y acciones.
+“Explicar esta cifra”, con origen y fórmula.
+“Del pedido al cobro”, con documentos y línea de tiempo.
+“Mi próxima tarea”, adaptada al usuario.
+
+Propón aprovechamiento de remanentes con revisión técnica.
+
+Incluye comparación de ofertas por costo total, plazo y calidad.
+
+Permite solicitar medición desde el catálogo sin prometer precios definitivos.
+
+La creatividad debe reducir esfuerzo y errores. No agregues gráficos o animaciones sin propósito.
+
+28. SQL SERVER Y VARIOS USUARIOS
+
+SQL Server será la fuente de operaciones confirmadas.
+
+Usa servicios específicos y evita reemplazar tablas completas desde el navegador.
+
+Aplica transacciones, restricciones, precisión decimal y control de versión.
+
+Las operaciones repetidas no deben duplicar cobros, pagos, recepciones o entregas.
+
+Ante respuesta incierta, consulta el resultado antes de repetir.
+
+Usa conexiones reutilizadas, paginación e índices medidos.
+
+Protege archivos y exportaciones.
+
+Conserva datos y autenticación mediante migraciones; no reconstruyas la base.
+
+29. RECUPERACIÓN Y ACCESIBILIDAD
+
+Maneja cortes de conexión y reinicios sin perder operaciones confirmadas.
+
+Conserva borradores de forma segura.
+
+Incluye respaldos y restauraciones probadas.
+
+La interfaz funcionará con teclado y teléfono, con etiquetas y contraste.
+
+Los mensajes deben explicar cómo continuar sin culpar al usuario.
+
+No expongas información sensible en notificaciones.
+
+30. COHERENCIA CON LOS CUATRO CORTES
+
+Corte 1:
+Centralización y aporte a Contabilidad y Estadística.
+
+Corte 2:
+Requisitos e identificadores originales; cambios documentados.
+
+Corte 3:
+Modelos actualizados según procesos y arquitectura reales.
+
+Corte 4:
+Captura de requisitos, análisis, diseño, implementación y pruebas.
+
+Mantén:
+Requisito → Actor → Permiso → Caso de uso → Pantalla → API → Datos → Prueba → Evidencia.
+
+Distingue propuesto, implementado y probado.
+
+31. PRUEBAS Y CRITERIO DE TERMINACIÓN
+
+Comprueba:
+- Acceso individual con correo y contraseña.
+- Creación y activación de cuentas.
+- Permisos correctos para los cuatro perfiles.
+- Persistencia después de recargar.
+- Edición simultánea sin sobrescritura silenciosa.
+- Existencias consistentes.
+- Ausencia de operaciones duplicadas.
+- Devoluciones y correcciones trazables.
+- Saldos y auxiliares conciliados.
+- Planillas y asientos coherentes.
+- Protección de períodos cerrados.
+- Documentos privados inaccesibles sin permiso.
+- Reportes consistentes con datos.
+- Recuperación y restauración.
+- Funcionamiento con teclado y móvil.
+
+Ejecuta las metas de concurrencia documentadas y reporta entorno, carga y resultados.
+
+Entrega pantallas, servicios, migraciones, permisos, reglas, pruebas, evidencia y pendientes.
+
+Una función estará terminada cuando el usuario autorizado pueda completar la tarea, los efectos sean correctos, los datos persistan, los accesos indebidos se bloqueen y la documentación coincida con las pruebas. )lo de la imagen ta,bien se va a actualizar)
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-10-18T06:12:28-06:00.
+
+The user has uploaded 1 image(s):
+- C:/Users/DELL GAMING G15/.gemini/antigravity/brain/e3712407-fa5a-40fc-a39f-acaa4630300d/.user_uploaded/media_1792325534118_bc783a12.jpg
+You can embed this image in an artifact if you need the USER to review it.
+</ADDITIONAL_METADATA>
+<USER_SETTINGS_CHANGE>
+The user changed setting `Model Selection` from None to Gemini 3.8 Flash (High). No need to comment on this change if the user doesn't ask about it. If reporting what model you are, please use a human readable name instead of the exact string.
+</USER_SETTINGS_CHANGE>

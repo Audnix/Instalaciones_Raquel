@@ -1,9 +1,11 @@
-import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { eventFingerprint, GENESIS, inferSeverity, sealChain } from "../lib/auditSeal";
+import {emptyDatabase, normalizeErpState as mergeDb} from '../lib/normalizeErpState';
+import { allocateInventory } from '../lib/inventoryAllocation';
+import { createSnapshotQueue } from '../lib/snapshotQueue';
+import { getApiBaseUrl } from '../lib/apiBase';
+import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { eventFingerprint, GENESIS, inferSeverity } from "../lib/auditSeal";
 import { buildDocToken } from "../lib/invoiceDoc";
-import { catalogLots, catalogProducts, catalogPromotions, mergeProductSpecs } from "../data/catalog";
-import { seedUsers } from "../auth/roles";
-import { payrollOf } from "../lib/payrollNi";
+import { authenticatedFetch, getAuthToken } from "../auth/apiSession";
 import type {
   AccountingEntry,
   AuditEvent,
@@ -26,462 +28,14 @@ import type {
 } from "../types/erp";
 
 const DB_KEY = "raquel_erp_db_v7";
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
+const API_URL = getApiBaseUrl();
 
 const now = () => new Date().toISOString();
-const daysAgo = (days: number) => new Date(Date.now() - days * 86400000).toISOString();
-const id = (prefix: string) => `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
-
-const seed: ErpDatabase = {
-  products: catalogProducts,
-  lots: catalogLots,
-  promotions: catalogPromotions,
-  kardex: [
-    { id: "kx1", productId: "p2", type: "salida", quantity: 6, unitCost: 310, date: daysAgo(4), reason: "Venta FAC-1092", userName: "Ana Ventas" },
-    { id: "kx2", productId: "p1", type: "entrada", quantity: 40, unitCost: 140, date: daysAgo(7), reason: "OC-448 Alumex", userName: "Luis Compras" },
-    { id: "kx3", productId: "p5", type: "entrada", quantity: 55, unitCost: 190, date: daysAgo(14), reason: "OC-451 Alumex", userName: "Luis Compras" },
-    { id: "kx4", productId: "e4", type: "salida", quantity: 2, unitCost: 2400, date: daysAgo(1), reason: "Venta FAC-1108", userName: "Ana Ventas" }
-  ],
-  sales: [
-    {
-      id: "s1",
-      saleNumber: "FAC-1092",
-      clientName: "Torre Azul",
-      items: [{ productId: "p2", quantity: 6, unitPrice: 420 }],
-      subtotal: 2520,
-      discountAmount: 126,
-      promoCode: "Arranque 5%",
-      taxAmount: 359.1,
-      total: 2753.1,
-      status: "completed",
-      saleDate: daysAgo(4),
-      createdBy: "Ana Ventas",
-      qrPayload: ""
-    },
-    {
-      id: "s2",
-      saleNumber: "FAC-1095",
-      clientName: "Grupo Hábitat",
-      items: [
-        { productId: "p1", quantity: 20, unitPrice: 186 },
-        { productId: "p4", quantity: 8, unitPrice: 64 }
-      ],
-      subtotal: 4232,
-      discountAmount: 338.56,
-      promoCode: "Combo Hogar 8%",
-      taxAmount: 584.02,
-      total: 4477.46,
-      status: "completed",
-      saleDate: daysAgo(2),
-      createdBy: "Ana Ventas",
-      qrPayload: ""
-    },
-    {
-      id: "s3",
-      saleNumber: "FAC-1108",
-      clientName: "Casa Norte",
-      items: [{ productId: "e4", quantity: 2, unitPrice: 3200 }],
-      subtotal: 6400,
-      discountAmount: 512,
-      promoCode: "Combo Hogar 8%",
-      taxAmount: 883.2,
-      total: 6771.2,
-      status: "completed",
-      saleDate: daysAgo(1),
-      createdBy: "Ana Ventas",
-      qrPayload: ""
-    },
-    {
-      id: "s4",
-      saleNumber: "FAC-1110",
-      clientName: "Plaza Sur",
-      items: [
-        { productId: "e7", quantity: 1, unitPrice: 16800 },
-        { productId: "e12", quantity: 2, unitPrice: 1800 }
-      ],
-      subtotal: 20400,
-      discountAmount: 3060,
-      promoCode: "Mega pack 15%",
-      taxAmount: 2601,
-      total: 19941,
-      status: "completed",
-      saleDate: daysAgo(0),
-      createdBy: "Ana Ventas",
-      qrPayload: ""
-    },
-    {
-      id: "s5",
-      saleNumber: "FAC-1061",
-      clientName: "Las Palmas",
-      items: [
-        { productId: "p1", quantity: 18, unitPrice: 186 },
-        { productId: "p5", quantity: 8, unitPrice: 245 }
-      ],
-      subtotal: 5308,
-      discountAmount: 265.4,
-      promoCode: "Arranque 5%",
-      taxAmount: 756.39,
-      total: 5798.99,
-      status: "completed",
-      saleDate: daysAgo(70),
-      createdBy: "Ana Ventas",
-      qrPayload: ""
-    },
-    {
-      id: "s6",
-      saleNumber: "FAC-1068",
-      clientName: "Torre Azul",
-      items: [{ productId: "p8", quantity: 3, unitPrice: 890 }],
-      subtotal: 2670,
-      discountAmount: 0,
-      taxAmount: 400.5,
-      total: 3070.5,
-      status: "completed",
-      saleDate: daysAgo(62),
-      createdBy: "Ana Ventas",
-      qrPayload: ""
-    },
-    {
-      id: "s7",
-      saleNumber: "FAC-1074",
-      clientName: "Residencial Sol",
-      items: [{ productId: "e1", quantity: 1, unitPrice: 18500 }],
-      subtotal: 18500,
-      discountAmount: 1480,
-      promoCode: "Combo Hogar 8%",
-      taxAmount: 2553,
-      total: 19573,
-      status: "completed",
-      saleDate: daysAgo(45),
-      createdBy: "Ana Ventas",
-      qrPayload: ""
-    },
-    {
-      id: "s8",
-      saleNumber: "FAC-1082",
-      clientName: "Clínica del Lago",
-      items: [{ productId: "e6", quantity: 1, unitPrice: 14900 }],
-      subtotal: 14900,
-      discountAmount: 2235,
-      promoCode: "Mega pack 15%",
-      taxAmount: 1899.75,
-      total: 14564.75,
-      status: "completed",
-      saleDate: daysAgo(38),
-      createdBy: "Ana Ventas",
-      qrPayload: ""
-    },
-    {
-      id: "s9",
-      saleNumber: "FAC-1088",
-      clientName: "Oficinas Metro",
-      items: [
-        { productId: "p2", quantity: 10, unitPrice: 420 },
-        { productId: "p7", quantity: 4, unitPrice: 320 }
-      ],
-      subtotal: 5480,
-      discountAmount: 438.4,
-      promoCode: "Combo Hogar 8%",
-      taxAmount: 756.24,
-      total: 5797.84,
-      status: "completed",
-      saleDate: daysAgo(30),
-      createdBy: "Ana Ventas",
-      qrPayload: ""
-    }
-  ],
-  proformas: [
-    {
-      id: "pf1",
-      proformaNumber: "PRF-220",
-      clientName: "Residencial Sol",
-      items: [
-        { productId: "e1", quantity: 1, unitPrice: 18500 },
-        { productId: "e2", quantity: 1, unitPrice: 12400 }
-      ],
-      subtotal: 30900,
-      discountAmount: 4635,
-      promoCode: "Mega pack 15%",
-      taxAmount: 3939.75,
-      total: 30204.75,
-      status: "enviada",
-      validUntil: daysAgo(-12),
-      notes: "Pack cocina-lavado. Vigencia 12 días.",
-      createdAt: daysAgo(3),
-      createdBy: "Ana Ventas",
-      qrPayload: ""
-    },
-    {
-      id: "pf2",
-      proformaNumber: "PRF-221",
-      clientName: "Clínica del Lago",
-      items: [{ productId: "e6", quantity: 2, unitPrice: 14900 }],
-      subtotal: 29800,
-      discountAmount: 4470,
-      promoCode: "Mega pack 15%",
-      taxAmount: 3799.5,
-      total: 29129.5,
-      status: "aceptada",
-      validUntil: daysAgo(-8),
-      notes: "Aires consultorios. Lista para facturar.",
-      createdAt: daysAgo(5),
-      createdBy: "Ana Ventas",
-      qrPayload: ""
-    },
-    {
-      id: "pf3",
-      proformaNumber: "PRF-218",
-      clientName: "Oficinas Metro",
-      items: [{ productId: "p6", quantity: 40, unitPrice: 185 }],
-      subtotal: 7400,
-      discountAmount: 592,
-      promoCode: "Combo Hogar 8%",
-      taxAmount: 1021.2,
-      total: 7829.2,
-      status: "borrador",
-      validUntil: daysAgo(-15),
-      notes: "Mamparas preliminares.",
-      createdAt: daysAgo(1),
-      createdBy: "Ana Ventas",
-      qrPayload: ""
-    }
-  ],
-  purchases: [
-    {
-      id: "c1",
-      purchaseNumber: "OC-448",
-      supplierName: "Alumex",
-      items: [{ productId: "p1", quantity: 40, unitPrice: 140 }],
-      total: 5600,
-      status: "received",
-      purchaseDate: daysAgo(7),
-      createdBy: "Luis Compras"
-    },
-    {
-      id: "c2",
-      purchaseNumber: "OC-451",
-      supplierName: "Alumex",
-      items: [{ productId: "p5", quantity: 55, unitPrice: 190 }],
-      total: 10450,
-      status: "received",
-      purchaseDate: daysAgo(14),
-      createdBy: "Luis Compras"
-    },
-    {
-      id: "c3",
-      purchaseNumber: "OC-455",
-      supplierName: "Vidrios del Pacífico",
-      items: [{ productId: "p2", quantity: 22, unitPrice: 325 }],
-      total: 7150,
-      status: "received",
-      purchaseDate: daysAgo(6),
-      createdBy: "Luis Compras"
-    },
-    {
-      id: "c4",
-      purchaseNumber: "OC-460",
-      supplierName: "Ferretería Central",
-      items: [{ productId: "p7", quantity: 10, unitPrice: 210 }],
-      total: 2100,
-      status: "ordered",
-      purchaseDate: daysAgo(1),
-      createdBy: "Luis Compras"
-    }
-  ],
-  accounting: [
-    { id: "a1", entryNumber: "AS-1001", description: "Venta FAC-1092 Torre Azul", debit: 2898, credit: 2898, debitAccount: "Caja", creditAccount: "Ventas", entryDate: daysAgo(4), referenceType: "sale", referenceId: "s1" },
-    { id: "a2", entryNumber: "AS-1002", description: "Compra OC-448 Alumex", debit: 5600, credit: 5600, debitAccount: "Inventario", creditAccount: "Cuentas por pagar", entryDate: daysAgo(7), referenceType: "purchase", referenceId: "c1" },
-    { id: "a3", entryNumber: "AS-1003", description: "Venta FAC-1095 Grupo Hábitat", debit: 4866.8, credit: 4866.8, debitAccount: "Caja", creditAccount: "Ventas", entryDate: daysAgo(2), referenceType: "sale", referenceId: "s2" },
-    { id: "a4", entryNumber: "AS-1004", description: "Compra OC-451 Alumex", debit: 10450, credit: 10450, debitAccount: "Inventario", creditAccount: "Cuentas por pagar", entryDate: daysAgo(14), referenceType: "purchase", referenceId: "c2" },
-    { id: "a5", entryNumber: "AS-1005", description: "Venta FAC-1101 Plaza Sur", debit: 2047, credit: 2047, debitAccount: "Banco", creditAccount: "Ventas", entryDate: daysAgo(0), referenceType: "sale", referenceId: "s4" }
-  ],
-  finance: [
-    { id: "f1", type: "ingreso", category: "Ventas", amount: 2898, date: daysAgo(4), note: "Cobro FAC-1092", userName: "Ana Ventas" },
-    { id: "f2", type: "egreso", category: "Materia prima", amount: 5600, date: daysAgo(7), note: "OC Alumex", userName: "Luis Compras" },
-    { id: "f3", type: "ingreso", category: "Ventas", amount: 4866.8, date: daysAgo(2), note: "Cobro FAC-1095", userName: "Ana Ventas" },
-    { id: "f4", type: "egreso", category: "Materia prima", amount: 10450, date: daysAgo(14), note: "OC-451", userName: "Luis Compras" },
-    { id: "f5", type: "ingreso", category: "Instalación", amount: 2047, date: daysAgo(0), note: "Transferencia FAC-1101", userName: "Ana Ventas" },
-    { id: "f6", type: "egreso", category: "Servicios", amount: 1850, date: daysAgo(3), note: "Energía taller", userName: "María Contadora" }
-  ],
-  projections: [
-    { id: "pr1", month: "Ene", expectedSales: 980000, expectedCosts: 640000 },
-    { id: "pr2", month: "Feb", expectedSales: 1120000, expectedCosts: 710000 },
-    { id: "pr3", month: "Mar", expectedSales: 1280000, expectedCosts: 780000 },
-    { id: "pr4", month: "Abr", expectedSales: 1540000, expectedCosts: 930000 },
-    { id: "pr5", month: "May", expectedSales: 1680000, expectedCosts: 1010000 },
-    { id: "pr6", month: "Jun", expectedSales: 1840000, expectedCosts: 1198000 },
-    { id: "pr7", month: "Jul", expectedSales: 1920000, expectedCosts: 1210000 },
-    { id: "pr8", month: "Ago", expectedSales: 2050000, expectedCosts: 1295000 },
-    { id: "pr9", month: "Sep", expectedSales: 2180000, expectedCosts: 1340000 }
-  ],
-  production: [
-    { id: "o1", code: "OT-2048", product: "Ventanas residenciales", client: "Las Palmas", qty: 18, stage: "ensamble", sprint: "Sprint 12", owner: "Carlos Producción" },
-    { id: "o2", code: "OT-2049", product: "Fachada modular", client: "Torre Azul", qty: 4, stage: "corte", sprint: "Sprint 12", owner: "Carlos Producción" },
-    { id: "o3", code: "OT-2050", product: "Puerta de vidrio", client: "Casa Norte", qty: 2, stage: "backlog", sprint: "Sprint 13", owner: "Taller" },
-    { id: "o4", code: "OT-2031", product: "Barandal 12mm", client: "Plaza Sur", qty: 9, stage: "entregado", sprint: "Sprint 11", owner: "Instalación" },
-    { id: "o5", code: "OT-2052", product: "Mamparas clínicas", client: "Clínica del Lago", qty: 6, stage: "instalacion", sprint: "Sprint 13", owner: "Instalación" },
-    { id: "o6", code: "OT-2053", product: "Mosquiteros balcón", client: "Residencial Sol", qty: 14, stage: "corte", sprint: "Sprint 13", owner: "Carlos Producción" }
-  ],
-  parties: [
-    { id: "cl1", name: "Grupo Hábitat", contact: "Rosa Méndez", phone: "8888-1100", type: "cliente" },
-    { id: "cl2", name: "Torre Azul", contact: "Iván Solís", phone: "8777-2211", type: "cliente" },
-    { id: "cl3", name: "Casa Norte", contact: "Elena Cruz", phone: "8555-3344", type: "cliente" },
-    { id: "cl4", name: "Plaza Sur", contact: "Mario Peña", phone: "8666-7788", type: "cliente" },
-    { id: "cl5", name: "Residencial Sol", contact: "Patricia Gómez", phone: "8444-9900", type: "cliente" },
-    { id: "cl6", name: "Clínica del Lago", contact: "Dr. Rivas", phone: "8222-1010", type: "cliente" },
-    { id: "pv1", name: "Alumex", contact: "Compras Alumex", phone: "2222-4400", type: "proveedor" },
-    { id: "pv2", name: "Vidrios del Pacífico", contact: "Karla Ruiz", phone: "2255-9090", type: "proveedor" },
-    { id: "pv3", name: "Ferretería Central", contact: "José Duarte", phone: "2277-3311", type: "proveedor" }
-  ],
-  employees: [
-    { id: "e1", name: "Carlos Producción", position: "Supervisor de taller", salary: 18500, area: "Producción" },
-    { id: "e2", name: "Ana Ventas", position: "Asesora comercial", salary: 14200, area: "Ventas" },
-    { id: "e3", name: "Luis Compras", position: "Comprador", salary: 13800, area: "Compras" },
-    { id: "e4", name: "María Contadora", position: "Contadora general", salary: 16800, area: "Contabilidad" },
-    { id: "e5", name: "Diego Instalador", position: "Técnico de instalación", salary: 12500, area: "Producción" },
-    { id: "e6", name: "Sofía Bodega", position: "Encargada de inventario", salary: 11800, area: "Inventario" }
-  ],
-  payrollRuns: [],
-  albums: [
-    {
-      id: "al-jul",
-      month: "2026-07",
-      title: "Julio en taller",
-      blurb: "Vidrio templado, perfiles 5020 y kits de ventana para obras del mes.",
-      productIds: ["p1", "p2", "p4", "p5", "p8"],
-      published: true,
-      createdAt: daysAgo(70)
-    },
-    {
-      id: "al-ago",
-      month: "2026-08",
-      title: "Agosto hogar",
-      blurb: "Showroom: refrigeradora, lavadora, TV y aire. Combos del mes.",
-      productIds: ["e1", "e2", "e6", "e7", "e4", "e12"],
-      published: true,
-      createdAt: daysAgo(40)
-    },
-    {
-      id: "al-sep",
-      month: "2026-09",
-      title: "Septiembre vitrina",
-      blurb: "Lo que está en venta este mes: vidrio, barandal y packs de hogar.",
-      productIds: ["p2", "p8", "p7", "e1", "e6", "e7", "e10", "e9"],
-      published: true,
-      createdAt: daysAgo(8)
-    }
-  ],
-  projects: [
-    { id: "pj1", code: "PRJ-2048", name: "Residencial Las Palmas", client: "Grupo Hábitat", amount: 486200, progress: 68, state: "Fabricación", owner: "Supervisor" },
-    { id: "pj2", code: "PRJ-2055", name: "Fachada Torre Azul", client: "Torre Azul", amount: 312900, progress: 42, state: "Instalación", owner: "Obra" },
-    { id: "pj3", code: "PRJ-2060", name: "Barandales Plaza Sur", client: "Plaza Sur", amount: 158400, progress: 90, state: "Cierre", owner: "Instalación" },
-    { id: "pj4", code: "PRJ-2062", name: "Mamparas Clínica del Lago", client: "Clínica del Lago", amount: 97400, progress: 55, state: "Instalación", owner: "Obra" }
-  ],
-  cash: [
-    { id: "k1", account: "caja", type: "entrada", amount: 2898, date: daysAgo(4), concept: "Cobro FAC-1092" },
-    { id: "k2", account: "banco", type: "salida", amount: 5600, date: daysAgo(7), concept: "Pago OC-448" },
-    { id: "k3", account: "caja", type: "entrada", amount: 4866.8, date: daysAgo(2), concept: "Cobro FAC-1095" },
-    { id: "k4", account: "banco", type: "entrada", amount: 2047, date: daysAgo(0), concept: "Transferencia FAC-1101" },
-    { id: "k5", account: "caja", type: "salida", amount: 1850, date: daysAgo(3), concept: "Energía taller" },
-    { id: "k6", account: "banco", type: "salida", amount: 10450, date: daysAgo(14), concept: "Pago OC-451" }
-  ],
-  users: seedUsers,
-  audit: sealChain([
-    { id: "au0", at: daysAgo(14), userName: "Raquel López", action: "autenticar", module: "usuarios", detail: "Apertura de gobierno del ERP.", uml: "Caso de uso RF01" },
-    { id: "au1", at: daysAgo(14), userName: "Sistema", action: "inicio", module: "datos", detail: "Base operativa lista.", uml: "Despliegue RS06" },
-    { id: "au2", at: daysAgo(14), userName: "Luis Compras", action: "compra", module: "compras", detail: "OC-451 Alumex recibida.", reference: "OC-451", uml: "Actividad RF07" },
-    { id: "au3", at: daysAgo(7), userName: "Luis Compras", action: "compra", module: "compras", detail: "OC-448 genera lotes PEPS.", reference: "OC-448", uml: "Actividad RF07" },
-    { id: "au4", at: daysAgo(4), userName: "Ana Ventas", action: "venta", module: "ventas", detail: "FAC-1092 Torre Azul · VID-10T x6.", reference: "FAC-1092", uml: "Secuencia RF08 / RF20" },
-    { id: "au5", at: daysAgo(4), userName: "Sistema", action: "asiento", module: "contabilidad", detail: "AS-1001 espejo de FAC-1092.", reference: "FAC-1092", uml: "Colaboración RD03" },
-    { id: "au6", at: daysAgo(4), userName: "Ana Ventas", action: "cobro", module: "caja", detail: "Entrada de caja FAC-1092.", reference: "FAC-1092", uml: "Secuencia RF09" },
-    { id: "au7", at: daysAgo(2), userName: "Ana Ventas", action: "venta", module: "ventas", detail: "FAC-1095 Grupo Hábitat.", reference: "FAC-1095", uml: "Secuencia RF08 / RF20" },
-    { id: "au8", at: daysAgo(1), userName: "Carlos Producción", action: "kanban", module: "produccion", detail: "OT-2049 Torre Azul → corte.", reference: "OT-2049", uml: "Estados RF11" },
-    { id: "au9", at: daysAgo(1), userName: "Luis Compras", action: "compra", module: "compras", detail: "OC-460 pedida.", reference: "OC-460", uml: "Actividad RF07" },
-    { id: "au10", at: daysAgo(0), userName: "Ana Ventas", action: "venta", module: "ventas", detail: "FAC-1110 Plaza Sur · Mega pack 15%.", reference: "FAC-1110", uml: "Secuencia RF08 / RF20" },
-    { id: "au11", at: daysAgo(0), userName: "Sistema", action: "alerta", module: "inventario", detail: "Silicon neutro blanco bajo mínimo.", severity: "warn", uml: "Estados RF18" },
-    { id: "au12", at: daysAgo(0), userName: "Invitado Gerencia", action: "consulta", module: "reportes", detail: "Consulta de margen sin mutar datos.", uml: "Caso de uso RU05" }
-  ])
-};
-
-function hydrateQr(db: ErpDatabase): ErpDatabase {
-  const names = Object.fromEntries(db.products.map((item) => [item.id, item.name]));
-  const lineItems = (items: Sale["items"]) =>
-    items.map((item) => ({
-      name: names[item.productId] ?? item.productId,
-      quantity: item.quantity,
-      unitPrice: item.unitPrice
-    }));
-  return {
-    ...db,
-    promotions: db.promotions?.length ? db.promotions : catalogPromotions,
-    sales: db.sales.map((sale) => ({
-      ...sale,
-      discountAmount: sale.discountAmount ?? 0,
-      qrPayload: buildDocToken({
-        kind: "FAC",
-        number: sale.saleNumber,
-        client: sale.clientName,
-        date: sale.saleDate,
-        total: sale.total,
-        subtotal: sale.subtotal,
-        discount: sale.discountAmount ?? 0,
-        tax: sale.taxAmount,
-        promo: sale.promoCode,
-        items: lineItems(sale.items)
-      })
-    })),
-    proformas: (db.proformas ?? []).map((row) => ({
-      ...row,
-      discountAmount: row.discountAmount ?? 0,
-      qrPayload: buildDocToken({
-        kind: "PRF",
-        number: row.proformaNumber,
-        client: row.clientName,
-        date: row.createdAt,
-        total: row.total,
-        subtotal: row.subtotal,
-        discount: row.discountAmount ?? 0,
-        tax: row.taxAmount,
-        promo: row.promoCode,
-        items: lineItems(row.items)
-      })
-    }))
-  };
-}
-
-const readySeed = hydrateQr(seed);
-
-function mergeDb(parsed: Partial<ErpDatabase>): ErpDatabase {
-  return hydrateQr({
-    ...readySeed,
-    ...parsed,
-    products: (parsed.products?.length ?? 0) >= readySeed.products.length && parsed.products
-      ? mergeProductSpecs(parsed.products)
-      : readySeed.products,
-    sales: (parsed.sales?.length ?? 0) >= readySeed.sales.length && parsed.sales ? parsed.sales : readySeed.sales,
-    lots: (parsed.lots?.length ?? 0) >= readySeed.lots.length && parsed.lots ? parsed.lots : readySeed.lots,
-    promotions: parsed.promotions?.length ? parsed.promotions : catalogPromotions,
-    proformas: parsed.proformas?.length ? parsed.proformas : readySeed.proformas,
-    albums: parsed.albums?.length ? parsed.albums : readySeed.albums,
-    payrollRuns: parsed.payrollRuns ?? readySeed.payrollRuns,
-    users: parsed.users?.length
-      ? parsed.users.map((user) => {
-          const seededUser = seedUsers.find((item) => item.id === user.id);
-          return { ...seededUser, ...user, password: user.password || seededUser?.password || "" };
-        })
-      : seedUsers,
-    audit: parsed.audit?.some((item) => item.hash) && parsed.audit.length >= readySeed.audit.length ? parsed.audit : readySeed.audit
-  });
-}
+const id = (prefix: string) => `${prefix}-${globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2, 12)}`}`;
 
 function loadDb(): ErpDatabase {
-  const raw = localStorage.getItem(DB_KEY);
-  if (!raw) return readySeed;
-  try {
-    return mergeDb(JSON.parse(raw) as Partial<ErpDatabase>);
-  } catch {
-    return readySeed;
-  }
+  try { const raw = localStorage.getItem(DB_KEY); return raw ? mergeDb(JSON.parse(raw)) : emptyDatabase; }
+  catch { return emptyDatabase; }
 }
 
 type PepsSlice = {
@@ -503,7 +57,10 @@ type NightlyCloseResult = {
 
 type StoreValue = {
   db: ErpDatabase;
-  syncStatus: "loading" | "connected" | "offline";
+  syncStatus: "loading" | "connected" | "offline" | "conflict";
+  saving: boolean;
+  syncError: string | null;
+  reloadState: () => void;
   stockOf: (productId: string) => number;
   previewPeps: (productId: string, qty: number) => PepsSlice[];
   runNightlyClose: (actor: string) => NightlyCloseResult;
@@ -521,6 +78,7 @@ type StoreValue = {
   moveProduction: (id: string, stage: ProductionOrder["stage"], actor: string) => void;
   addProduction: (order: Omit<ProductionOrder, "id">, actor: string) => void;
   addParty: (party: Omit<Party, "id">, actor: string) => void;
+  saveParty: (party: Partial<Party> & { name: string; type: Party["type"] }, actor: string) => Promise<{ error?: string; saved?: boolean }>;
   addEmployee: (employee: Omit<Employee, "id">, actor: string) => void;
   payPayroll: (period: string, actor: string) => { error: string | null; net?: number };
   publishAlbum: (album: Omit<CatalogAlbum, "id" | "createdAt">, actor: string) => CatalogAlbum;
@@ -535,71 +93,100 @@ const StoreContext = createContext<StoreValue | null>(null);
 export function ErpProvider({ children }: { children: ReactNode }) {
   const [db, setDb] = useState<ErpDatabase>(loadDb);
   const [syncStatus, setSyncStatus] = useState<StoreValue["syncStatus"]>("loading");
+  // Revisión (rowversion) del estado en SQL Server: el guardado exige que siga
+  // siendo la misma para no sobrescribir cambios de otra sesión (OCC).
+  const revisionRef = useRef<string | null>(null);
+  const synchronizedDbRef = useRef<ErpDatabase | null>(null);
+  const [sessionToken, setSessionToken] = useState(getAuthToken);
+  const [saving, setSaving] = useState(false);
+  const [syncError, setSyncError] = useState<string | null>(null);
+  const [reloadGeneration, setReloadGeneration] = useState(0);
+  const saveQueue = useRef<ReturnType<typeof createSnapshotQueue<ErpDatabase>> | null>(null);
+  const reloadState = useCallback(() => setReloadGeneration(value => value + 1), []);
 
   useEffect(() => {
-    localStorage.setItem(DB_KEY, JSON.stringify(db));
+    const updateSession = () => setSessionToken(getAuthToken());
+    window.addEventListener("raquel-auth-changed", updateSession);
+    window.addEventListener("storage", updateSession);
+    return () => {
+      window.removeEventListener("raquel-auth-changed", updateSession);
+      window.removeEventListener("storage", updateSession);
+    };
+  }, []);
+
+  useEffect(() => {
+    try { localStorage.setItem(DB_KEY, JSON.stringify({...db, users: db.users.map(({password: _password, ...user}) => user)})); } catch { /* SQL remains authoritative if browser storage is full. */ }
   }, [db]);
 
   useEffect(() => {
     const controller = new AbortController();
-    fetch(`${API_URL}/api/state`, { signal: controller.signal })
+    saveQueue.current?.stop();
+    saveQueue.current = null;
+    setSaving(false);
+    setSyncError(null);
+    revisionRef.current = null;
+    synchronizedDbRef.current = null;
+    if (!sessionToken) {
+      // Sin sesión válida no se consulta el estado (requiere autenticación).
+      setSyncStatus("offline");
+      return () => controller.abort();
+    }
+
+    setSyncStatus("loading");
+    authenticatedFetch(`${API_URL}/api/state`, { signal: controller.signal })
       .then(async (response) => {
         if (!response.ok) throw new Error(`Carga SQL Server: HTTP ${response.status}`);
-        return response.json() as Promise<{ state?: Partial<ErpDatabase> | null }>;
+        return response.json() as Promise<{ state?: Partial<ErpDatabase> | null; revision?: string | null }>;
       })
-      .then(({ state }) => {
-        if (state) {
-          setDb((current) => mergeDb({ ...state, users: current.users }));
-        }
+      .then(({ state, revision }) => {
+        if (!state || !revision) throw Error('SQL no devolvió un estado global y una revisión verificables. No se inicializan datos de ejemplo ni se sobrescriben tablas. Revisa la integración de la base.');
+        revisionRef.current = revision ?? null;
+        setDb((current) => {
+          const loaded = state ? mergeDb(state) : emptyDatabase;
+          synchronizedDbRef.current = loaded;
+          return loaded;
+        });
+        saveQueue.current = createSnapshotQueue<ErpDatabase>({
+          pending: () => setSaving(true),
+          save: async (snapshot) => {
+            if (getAuthToken() !== sessionToken) throw Error('La sesión cambió. No se envían cambios pendientes con otra cuenta.');
+            const state = {...snapshot, users: snapshot.users.map(({password: _password, ...user}) => user)};
+            const response = await authenticatedFetch(API_URL + '/api/state', {method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify({state, expectedRevision: revisionRef.current})});
+            const body = await response.json().catch(() => ({}));
+            if (!response.ok) throw Object.assign(new Error(body.message || 'Guardado SQL: HTTP ' + response.status), {status: response.status});
+            if (body.saved !== true || typeof body.revision !== 'string' || !/^0x[0-9a-f]{16}$/i.test(body.revision)) throw Error('Confirmación de guardado incierta. Consulta SQL antes de repetir.');
+            if (!controller.signal.aborted) revisionRef.current = body.revision;
+          },
+          saved: (snapshot) => { if (!controller.signal.aborted) { synchronizedDbRef.current = snapshot; setSaving(false); } },
+          failed: (error) => {
+            if (controller.signal.aborted) return;
+            setSaving(false);
+            setSyncError(error instanceof Error ? error.message : String(error));
+            setSyncStatus([409,428].includes((error as {status?:number})?.status ?? 0) ? 'conflict' : 'offline');
+          }
+        });
         setSyncStatus("connected");
       })
       .catch((error: unknown) => {
         if (!controller.signal.aborted) {
           console.error("No se pudo cargar el estado desde SQL Server.", error);
+          setSyncError(error instanceof Error ? error.message : String(error));
           setSyncStatus("offline");
         }
       });
-    return () => controller.abort();
-  }, []);
+    return () => { controller.abort(); saveQueue.current?.stop(); };
+  }, [sessionToken, reloadGeneration]);
 
   useEffect(() => {
-    if (syncStatus !== "connected") return;
-
-    const controller = new AbortController();
-    const timeout = window.setTimeout(() => {
-      const state = {
-        ...db,
-        users: db.users.map(({ password: _password, ...user }) => user)
-      };
-      fetch(`${API_URL}/api/state`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ state }),
-        signal: controller.signal
-      })
-        .then((response) => {
-          if (!response.ok) throw new Error(`Guardado SQL Server: HTTP ${response.status}`);
-        })
-        .catch((error: unknown) => {
-          if (!controller.signal.aborted) {
-            console.error("No se pudo guardar el estado en SQL Server.", error);
-            setSyncStatus("offline");
-          }
-        });
-    }, 300);
-
-    return () => {
-      window.clearTimeout(timeout);
-      controller.abort();
-    };
+    if (syncStatus === 'connected' && synchronizedDbRef.current !== db) saveQueue.current?.enqueue(db);
   }, [db, syncStatus]);
-
   useEffect(() => {
-    const refreshQr = () => setDb((prev) => hydrateQr(prev));
-    window.addEventListener("raquel-origin-ready", refreshQr);
-    refreshQr();
-    return () => window.removeEventListener("raquel-origin-ready", refreshQr);
-  }, []);
+    const warn = (event: BeforeUnloadEvent) => {
+      if (synchronizedDbRef.current && synchronizedDbRef.current !== db) { event.preventDefault(); event.returnValue = ''; }
+    };
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
+  }, [db]);
 
   const log = useCallback((event: Omit<AuditEvent, "id" | "at" | "hash" | "prevHash">) => {
     setDb((prev) => {
@@ -662,7 +249,7 @@ export function ErpProvider({ children }: { children: ReactNode }) {
   const value = useMemo<StoreValue>(
     () => ({
       db,
-      syncStatus,
+      syncStatus, saving: saving || (syncStatus === "connected" && synchronizedDbRef.current !== db), syncError, reloadState,
       stockOf,
       previewPeps,
       log,
@@ -675,20 +262,6 @@ export function ErpProvider({ children }: { children: ReactNode }) {
         const message = balanced
           ? `Cierre OK · ventas C$ ${salesTotal.toFixed(2)} · compras C$ ${purchasesTotal.toFixed(2)} · mayor cuadrado.`
           : `ALERTA descuadre · Débito C$ ${debit.toFixed(2)} ≠ Crédito C$ ${credit.toFixed(2)}.`;
-        if (!balanced) {
-          const entry: AccountingEntry = {
-            id: id("as"),
-            entryNumber: `CIERRE-${Date.now().toString().slice(-5)}`,
-            description: "Cierre batch RS02 · descuadre detectado",
-            debit: Math.abs(debit - credit),
-            credit: Math.abs(debit - credit),
-            debitAccount: "Descuadre detectado",
-            creditAccount: "Pendiente auditoría",
-            entryDate: now(),
-            referenceType: "manual"
-          };
-          setDb((prev) => ({ ...prev, accounting: [entry, ...prev.accounting] }));
-        }
         log({
           userName: actor,
           action: balanced ? "cierre OK" : "alerta descuadre",
@@ -739,10 +312,8 @@ export function ErpProvider({ children }: { children: ReactNode }) {
         return null;
       },
       addSale: (sale, actor) => {
-        for (const item of sale.items) {
-          if (stockOf(item.productId) < item.quantity) return { error: "Stock insuficiente para completar la venta." };
-        }
-        const saleNumber = `FAC-${Date.now().toString().slice(-6)}`;
+        if (!allocateInventory(db.lots, sale.items)) return { error: 'Cantidad inválida o stock insuficiente para el total del documento.' };
+        const saleNumber = id("FAC");
         const names = Object.fromEntries(db.products.map((item) => [item.id, item.name]));
         const qrPayload = buildDocToken({
           kind: "FAC",
@@ -762,42 +333,30 @@ export function ErpProvider({ children }: { children: ReactNode }) {
         });
         const row: Sale = { ...sale, discountAmount: sale.discountAmount ?? 0, id: id("s"), saleNumber, qrPayload };
         setDb((prev) => {
-          let lots = prev.lots;
-          for (const item of sale.items) {
-            const consumed = consumePeps(lots, item.productId, item.quantity);
-            if (!consumed) return prev;
-            lots = consumed;
-          }
+          const allocation = allocateInventory(prev.lots, sale.items);
+          if (!allocation) return prev;
+          const lots = allocation.lots;
           const kardex: KardexMove[] = sale.items.map((item) => ({
             id: id("kx"),
             productId: item.productId,
             type: "salida",
             quantity: item.quantity,
-            unitCost: item.unitPrice,
+            unitCost: allocation.unitCosts.get(item.productId) ?? 0,
             date: sale.saleDate,
             reason: `Venta ${saleNumber}`,
             userName: actor
           }));
           const accounting: AccountingEntry = {
             id: id("as"),
-            entryNumber: `AS-${Date.now().toString().slice(-5)}`,
+            entryNumber: id("AS"),
             description: `Venta ${saleNumber} - ${sale.clientName}`,
             debit: sale.total,
             credit: sale.total,
-            debitAccount: "Caja",
+            debitAccount: "Cuentas por cobrar",
             creditAccount: "Ventas",
             entryDate: sale.saleDate,
             referenceType: "sale",
             referenceId: row.id
-          };
-          const finance: FinanceMove = {
-            id: id("fn"),
-            type: "ingreso",
-            category: "Ventas",
-            amount: sale.total,
-            date: sale.saleDate,
-            note: saleNumber,
-            userName: actor
           };
           return {
             ...prev,
@@ -805,15 +364,15 @@ export function ErpProvider({ children }: { children: ReactNode }) {
             sales: [row, ...prev.sales],
             kardex: [...kardex, ...prev.kardex],
             accounting: [accounting, ...prev.accounting],
-            finance: [finance, ...prev.finance],
-            cash: [{ id: id("k"), account: "caja", type: "entrada", amount: sale.total, date: sale.saleDate, concept: saleNumber }, ...prev.cash]
+            finance: prev.finance,
+            cash: prev.cash
           };
         });
         log({ userName: actor, action: "venta", module: "ventas", detail: saleNumber, reference: saleNumber, uml: "Secuencia RF08 / RF20" });
         return { error: null, sale: row };
       },
       addProforma: (proforma, actor) => {
-        const proformaNumber = `PRF-${Date.now().toString().slice(-6)}`;
+        const proformaNumber = id("PRF");
         const createdAt = now();
         const names = Object.fromEntries(db.products.map((item) => [item.id, item.name]));
         const row: Proforma = {
@@ -847,10 +406,8 @@ export function ErpProvider({ children }: { children: ReactNode }) {
         const proforma = db.proformas.find((item) => item.id === proformaId);
         if (!proforma) return { error: "Proforma no encontrada." };
         if (proforma.status === "convertida") return { error: "Esta proforma ya fue facturada." };
-        for (const item of proforma.items) {
-          if (stockOf(item.productId) < item.quantity) return { error: "Stock insuficiente para convertir la proforma." };
-        }
-        const saleNumber = `FAC-${Date.now().toString().slice(-6)}`;
+        if (!allocateInventory(db.lots, proforma.items)) return { error: 'Cantidad inválida o stock insuficiente para el total del documento.' };
+        const saleNumber = id("FAC");
         const saleDate = now();
         const names = Object.fromEntries(db.products.map((item) => [item.id, item.name]));
         const qrPayload = buildDocToken({
@@ -885,12 +442,9 @@ export function ErpProvider({ children }: { children: ReactNode }) {
           qrPayload
         };
         setDb((prev) => {
-          let lots = prev.lots;
-          for (const item of proforma.items) {
-            const consumed = consumePeps(lots, item.productId, item.quantity);
-            if (!consumed) return prev;
-            lots = consumed;
-          }
+          const allocation = allocateInventory(prev.lots, proforma.items);
+          if (!allocation) return prev;
+          const lots = allocation.lots;
           return {
             ...prev,
             lots,
@@ -901,7 +455,7 @@ export function ErpProvider({ children }: { children: ReactNode }) {
                 productId: item.productId,
                 type: "salida" as const,
                 quantity: item.quantity,
-                unitCost: item.unitPrice,
+                unitCost: allocation.unitCosts.get(item.productId) ?? 0,
                 date: saleDate,
                 reason: `Venta ${saleNumber} desde ${proforma.proformaNumber}`,
                 userName: actor
@@ -911,11 +465,11 @@ export function ErpProvider({ children }: { children: ReactNode }) {
             accounting: [
               {
                 id: id("as"),
-                entryNumber: `AS-${Date.now().toString().slice(-5)}`,
+                entryNumber: id("AS"),
                 description: `Venta ${saleNumber} - ${proforma.clientName}`,
                 debit: proforma.total,
                 credit: proforma.total,
-                debitAccount: "Caja",
+                debitAccount: "Cuentas por cobrar",
                 creditAccount: "Ventas",
                 entryDate: saleDate,
                 referenceType: "sale" as const,
@@ -923,19 +477,7 @@ export function ErpProvider({ children }: { children: ReactNode }) {
               },
               ...prev.accounting
             ],
-            finance: [
-              {
-                id: id("fn"),
-                type: "ingreso" as const,
-                category: "Ventas",
-                amount: proforma.total,
-                date: saleDate,
-                note: `${saleNumber} ← ${proforma.proformaNumber}`,
-                userName: actor
-              },
-              ...prev.finance
-            ],
-            cash: [{ id: id("k"), account: "caja" as const, type: "entrada" as const, amount: proforma.total, date: saleDate, concept: saleNumber }, ...prev.cash],
+            finance: prev.finance, cash: prev.cash,
             proformas: prev.proformas.map((item) =>
               item.id === proformaId ? { ...item, status: "convertida" as const, convertedSaleId: row.id } : item
             )
@@ -945,7 +487,7 @@ export function ErpProvider({ children }: { children: ReactNode }) {
         return { error: null, sale: row };
       },
       addPurchase: (purchase, actor) => {
-        const purchaseNumber = `OC-${Date.now().toString().slice(-6)}`;
+        const purchaseNumber = id("OC");
         const row: Purchase = { ...purchase, id: id("oc"), purchaseNumber };
         setDb((prev) => {
           const lots: InventoryLot[] =
@@ -964,7 +506,7 @@ export function ErpProvider({ children }: { children: ReactNode }) {
               : prev.lots;
           const accounting: AccountingEntry = {
             id: id("as"),
-            entryNumber: `AS-${Date.now().toString().slice(-5)}`,
+            entryNumber: id("AS"),
             description: `Compra ${purchaseNumber} - ${purchase.supplierName}`,
             debit: purchase.total,
             credit: purchase.total,
@@ -978,17 +520,16 @@ export function ErpProvider({ children }: { children: ReactNode }) {
             ...prev,
             lots,
             purchases: [row, ...prev.purchases],
+            kardex: purchase.status === "received" ? [...purchase.items.map(item => ({id: id("kx"), productId: item.productId, type: "entrada" as const, quantity: item.quantity, unitCost: item.unitPrice, date: purchase.purchaseDate, reason: `Recepción ${purchaseNumber}`, userName: actor})), ...prev.kardex] : prev.kardex,
             accounting: purchase.status === "received" ? [accounting, ...prev.accounting] : prev.accounting,
-            finance:
-              purchase.status === "received"
-                ? [{ id: id("fn"), type: "egreso", category: "Compras", amount: purchase.total, date: purchase.purchaseDate, note: purchaseNumber, userName: actor }, ...prev.finance]
-                : prev.finance
+            // Recibir inventario crea una obligacion; el egreso nace al confirmar el pago.
+            finance: prev.finance
           };
         });
         log({ userName: actor, action: "compra", module: "compras", detail: purchaseNumber, reference: purchaseNumber, uml: "Actividad RF07" });
       },
       addAccounting: (entry, actor) => {
-        const row = { ...entry, id: id("as"), entryNumber: `AS-${Date.now().toString().slice(-5)}` };
+        const row = { ...entry, id: id("as"), entryNumber: id("AS") };
         setDb((prev) => ({ ...prev, accounting: [row, ...prev.accounting] }));
         log({ userName: actor, action: "asiento", module: "contabilidad", detail: row.description });
       },
@@ -1015,60 +556,29 @@ export function ErpProvider({ children }: { children: ReactNode }) {
         setDb((prev) => ({ ...prev, parties: [{ id: id("pt"), ...party }, ...prev.parties] }));
         log({ userName: actor, action: "alta", module: party.type === "cliente" ? "clientes" : "proveedores", detail: party.name });
       },
+      saveParty: async (party, actor) => {
+        if (party.id) {
+          setDb((prev) => ({
+            ...prev,
+            parties: prev.parties.map((p) => (p.id === party.id ? ({ ...p, ...party } as Party) : p))
+          }));
+          log({ userName: actor, action: "modificacion", module: party.type === "cliente" ? "clientes" : "proveedores", detail: party.name });
+        } else {
+          setDb((prev) => ({
+            ...prev,
+            parties: [{ id: id("pt"), ...party } as Party, ...prev.parties]
+          }));
+          log({ userName: actor, action: "alta", module: party.type === "cliente" ? "clientes" : "proveedores", detail: party.name });
+        }
+        return { saved: true };
+      },
       addEmployee: (employee, actor) => {
         setDb((prev) => ({ ...prev, employees: [{ id: id("e"), ...employee }, ...prev.employees] }));
         log({ userName: actor, action: "alta", module: "rrhh", detail: employee.name });
       },
-      payPayroll: (period, actor) => {
-        const already = db.payrollRuns.some((item) => item.period === period);
-        if (already) return { error: `La planilla de ${period} ya se pagó.` };
-        const pack = payrollOf(db.employees);
-        const row = {
-          id: id("py"),
-          period,
-          paidAt: now(),
-          actor,
-          gross: pack.gross,
-          inssLaboral: pack.inssLaboral,
-          inssPatronal: pack.inssPatronal,
-          inatec: pack.inatec,
-          ir: pack.ir,
-          net: pack.net,
-          employerCost: pack.employerCost,
-          employees: pack.slips.map(({ employeeId, gross, inssLaboral, ir, net, inssPatronal, inatec, aguinaldo, employerCost }) => ({
-            employeeId,
-            gross,
-            inssLaboral,
-            ir,
-            net,
-            inssPatronal,
-            inatec,
-            aguinaldo,
-            employerCost
-          }))
-        };
-        const accounting: AccountingEntry = {
-          id: id("as"),
-          entryNumber: `NOM-${period.replace("-", "")}`,
-          description: `Planilla ${period} · INSS / INATEC / IR`,
-          debit: pack.employerCost,
-          credit: pack.employerCost,
-          debitAccount: "Gastos de personal",
-          creditAccount: "Caja / INSS / DGI",
-          entryDate: now(),
-          referenceType: "payroll",
-          referenceId: row.id
-        };
-        setDb((prev) => ({
-          ...prev,
-          payrollRuns: [row, ...(prev.payrollRuns ?? [])],
-          accounting: [accounting, ...prev.accounting],
-          cash: [{ id: id("k"), account: "banco", type: "salida", amount: pack.net, date: now(), concept: `Pago neto planilla ${period}` }, ...prev.cash],
-          finance: [{ id: id("fn"), type: "egreso", category: "Planilla", amount: pack.employerCost, date: now(), note: `INSS + INATEC + IR ${period}`, userName: actor }, ...prev.finance]
-        }));
-        log({ userName: actor, action: "planilla", module: "nomina", detail: `${period} neto C$ ${pack.net}`, reference: period });
-        return { error: null, net: pack.net };
-      },
+      payPayroll: () => ({
+        error: "El pago requiere cálculo y aprobación del servidor. Regístralo en Nómina → Pagos; sin conexión no se confirma ni se crea un egreso local."
+      }),
       publishAlbum: (album, actor) => {
         const row: CatalogAlbum = { ...album, id: id("al"), createdAt: now() };
         setDb((prev) => {
@@ -1087,9 +597,8 @@ export function ErpProvider({ children }: { children: ReactNode }) {
         setDb((prev) => ({ ...prev, projects: [{ id: id("pj"), ...project }, ...prev.projects] }));
         log({ userName: actor, action: "alta", module: "proyectos", detail: project.name });
       },
-      addCash: (move, actor) => {
-        setDb((prev) => ({ ...prev, cash: [{ id: id("k"), ...move }, ...prev.cash] }));
-        log({ userName: actor, action: move.type, module: move.account === "caja" ? "caja" : "bancos", detail: move.concept });
+      addCash: () => {
+        throw new Error("Registra movimientos en Caja/Bancos mediante el servidor. Sin confirmación SQL no se crea un movimiento local.");
       },
       upsertUser: (user, actor) => {
         setDb((prev) => {
@@ -1099,7 +608,7 @@ export function ErpProvider({ children }: { children: ReactNode }) {
         log({ userName: actor, action: "usuario", module: "usuarios", detail: user.email });
       }
     }),
-    [db, log, stockOf, previewPeps, syncStatus]
+    [db, log, stockOf, previewPeps, syncStatus, saving, syncError, reloadState]
   );
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;

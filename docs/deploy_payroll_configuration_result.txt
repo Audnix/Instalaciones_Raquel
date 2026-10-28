@@ -1,0 +1,9 @@
+Changed database context to 'Instalaciones Raquel'.
+Changed database context to 'Instalaciones Raquel'.
+Changed database context to 'Instalaciones Raquel'.
+Result                                                  
+--------------------------------------------------------
+Configuracion confirmada, conteos de negocio conservados
+Runs        Items       Payments    CashMoves  
+----------- ----------- ----------- -----------
+          6         114           0           9

@@ -1,0 +1,16 @@
+{
+  "capturedAt": "2026-10-21T14:02:54.308Z",
+  "readOnly": true,
+  "runs": [
+    {
+      "id": "run-mvfbxste-d83c30",
+      "period": "TEST-DYN-7929",
+      "status": "borrador",
+      "net": 171424.85,
+      "headerPaid": 0,
+      "confirmedPaymentReceipts": 0,
+      "receiptCount": 0,
+      "workers": 21
+    }
+  ]
+}

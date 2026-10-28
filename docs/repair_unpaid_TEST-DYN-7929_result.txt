@@ -1,0 +1,4 @@
+Changed database context to 'Instalaciones Raquel'.
+PayrollRunId                                                                                         Period                                   Status                         ConfirmedPaymentsTotal CalculationStale
+---------------------------------------------------------------------------------------------------- ---------------------------------------- ------------------------------ ---------------------- ----------------
+run-mvfbxste-d83c30                                                                                  TEST-DYN-7929                            borrador                                        .0000                1

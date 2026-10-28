@@ -1,0 +1,29 @@
+PASS apertura y reintento sin duplicacion
+ROLLBACK: registros conservados {"sessions":1,"movements":9,"payments":0}
+C:\Users\GLOBALPRO\OneDrive - UNI\Escritorio\cursorINGESOFTWARE\Instalaciones_Raquel-main\Instalaciones_Raquel-main\server\node_modules\mssql\lib\tedious\request.js:922
+            err = new RequestError(err, 'EREQUEST')
+                  ^
+
+RequestError: Timeout: Request failed to complete in 15000ms
+    at Request.userCallback (C:\Users\GLOBALPRO\OneDrive - UNI\Escritorio\cursorINGESOFTWARE\Instalaciones_Raquel-main\Instalaciones_Raquel-main\server\node_modules\mssql\lib\tedious\request.js:922:19)
+    at Request.callback (C:\Users\GLOBALPRO\OneDrive - UNI\Escritorio\cursorINGESOFTWARE\Instalaciones_Raquel-main\Instalaciones_Raquel-main\server\node_modules\tedious\lib\request.js:239:14)
+    at C:\Users\GLOBALPRO\OneDrive - UNI\Escritorio\cursorINGESOFTWARE\Instalaciones_Raquel-main\Instalaciones_Raquel-main\server\node_modules\tedious\lib\connection.js:2734:24
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5) {
+  code: 'ETIMEOUT',
+  originalError: RequestError: Timeout: Request failed to complete in 15000ms
+      at Connection.requestTimeout (C:\Users\GLOBALPRO\OneDrive - UNI\Escritorio\cursorINGESOFTWARE\Instalaciones_Raquel-main\Instalaciones_Raquel-main\server\node_modules\tedious\lib\connection.js:1327:21)
+      at Timeout._onTimeout (C:\Users\GLOBALPRO\OneDrive - UNI\Escritorio\cursorINGESOFTWARE\Instalaciones_Raquel-main\Instalaciones_Raquel-main\server\node_modules\tedious\lib\connection.js:1304:14)
+      at listOnTimeout (node:internal/timers:635:17)
+      at process.processTimers (node:internal/timers:571:7) {
+    code: 'ETIMEOUT'
+  },
+  number: 'ETIMEOUT',
+  lineNumber: undefined,
+  state: undefined,
+  class: undefined,
+  serverName: undefined,
+  procName: undefined,
+  precedingErrors: []
+}
+
+Node.js v24.19.0

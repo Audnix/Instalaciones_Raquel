@@ -36,8 +36,20 @@ export function Field({ label, children }: { label: string; children: ReactNode 
 export const inputClass =
   "h-11 w-full rounded-lg border border-slate-200 bg-white px-3 outline-none transition focus:border-brand-500 dark:border-white/10 dark:bg-slate-950";
 
-export function Money({ value }: { value: number }) {
-  return <span>{value.toLocaleString("es-NI", { style: "currency", currency: "NIO", maximumFractionDigits: 0 }).replace("NIO", "C$")}</span>;
+export function Money({ value, decimals = 2 }: { value: number; decimals?: number }) {
+  const amount = Number.isFinite(value) ? value : 0;
+  return (
+    <span>
+      {amount
+        .toLocaleString("es-NI", {
+          style: "currency",
+          currency: "NIO",
+          minimumFractionDigits: 0,
+          maximumFractionDigits: decimals
+        })
+        .replace("NIO", "C$")}
+    </span>
+  );
 }
 
 export function StatusPill({ children, tone = "neutral" }: { children: ReactNode; tone?: "ok" | "warn" | "bad" | "neutral" }) {

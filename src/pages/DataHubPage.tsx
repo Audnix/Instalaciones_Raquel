@@ -1,3 +1,4 @@
+import { DatabaseScriptPanel } from "../components/DatabaseScriptPanel";
 import { FormEvent, useMemo, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -18,14 +19,14 @@ import {
 import { useErp } from "../store/erpStore";
 import type { ErpDatabase } from "../types/erp";
 
-type Tab = "resumen" | "modelo" | "clases" | "objetos" | "acid" | "tablas" | "productos";
+type Tab = "scripts" | "resumen" | "modelo" | "clases" | "objetos" | "acid" | "tablas" | "productos";
 
 const groups = ["Gobierno", "Catálogo", "Operación", "Finanzas"] as const;
 
 export default function DataHubPage() {
-  const { db, addProduct, deleteProduct, stockOf } = useErp();
+  const { db, addProduct, deleteProduct, stockOf, syncStatus, saving } = useErp();
   const { user, can } = useAuth();
-  const write = can("datos", "write");
+  const write = can("datos", "write") && syncStatus === 'connected' && !saving && user?.hierarchy === 'superadmin';
   const [tab, setTab] = useState<Tab>("resumen");
   const [selectedId, setSelectedId] = useState("venta");
   const [tableKey, setTableKey] = useState<keyof ErpDatabase>("sales");
@@ -81,6 +82,8 @@ export default function DataHubPage() {
         }
       />
 
+      {tab === "scripts" && <DatabaseScriptPanel allowed={user?.hierarchy === "superadmin"} />}
+
       <section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-brand-900 via-brand-700 to-cyan-600 p-5 text-white shadow-soft">
         <div className="pointer-events-none absolute -right-10 top-0 h-40 w-40 rounded-full bg-white/10 blur-2xl" />
         <div className="relative grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -95,6 +98,7 @@ export default function DataHubPage() {
         {(
           [
             ["resumen", "Resumen"],
+            ["scripts", "SQL y migraciones"],
             ["modelo", "Relaciones"],
             ["clases", "Estructura"],
             ["objetos", "Instantánea"],
@@ -284,8 +288,8 @@ export default function DataHubPage() {
               <Field label="Código"><input name="code" required className={inputClass} /></Field>
               <Field label="Nombre"><input name="name" required className={inputClass} /></Field>
               <Field label="Categoría"><input name="category" required className={inputClass} /></Field>
-              <Field label="Precio"><input name="unitPrice" type="number" required className={inputClass} /></Field>
-              <Field label="Mínimo"><input name="minQuantity" type="number" required className={inputClass} /></Field>
+              <Field label="Precio"><input name="unitPrice" type="number" min={0} step="0.01" required className={inputClass} /></Field>
+              <Field label="Mínimo"><input name="minQuantity" type="number" min={0} step="0.01" required className={inputClass} /></Field>
               <div className="md:col-span-5"><Button>Alta de producto</Button></div>
             </form>
           )}

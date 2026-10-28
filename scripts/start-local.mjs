@@ -1,13 +1,17 @@
 import { spawn } from "node:child_process";
 import { createServer } from "node:net";
+import { createRequire } from "node:module";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { setTimeout as delay } from "node:timers/promises";
 
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const serverRoot = resolve(projectRoot, "server");
+const require = createRequire(resolve(serverRoot, "package.json"));
+require("dotenv").config({ path: resolve(projectRoot, ".env") });
+const { getPort } = await import("../server/src/config/port.js");
 const viteEntry = resolve(projectRoot, "node_modules/vite/bin/vite.js");
-const apiPort = Number(process.env.PORT) || 4000;
+const apiPort = getPort(process.env.PORT);
 const firstWebPort = Number(process.env.VITE_PORT) || 5173;
 const apiUrl = `http://127.0.0.1:${apiPort}`;
 const managedProcesses = [];

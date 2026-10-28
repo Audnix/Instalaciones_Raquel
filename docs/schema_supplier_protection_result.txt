@@ -1,0 +1,6 @@
+Changed database context to 'Raquel_Schema_Check_20261025_99ef80cc'.
+SupplierProtection
+------------------
+                 1
+
+(1 rows affected)

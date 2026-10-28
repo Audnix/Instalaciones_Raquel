@@ -1,0 +1,22 @@
+﻿Changed database context to 'Instalaciones Raquel'.
+28: respaldo de control (solo conteos, no copia masiva)
+PagosAntes MovimientosCajaAntes SesionesCajaAntes
+---------- -------------------- -----------------
+0 6 0
+28: PayrollPayments.EmployeeId ya admite NULL.
+28: verificacion
+Account SaldoSugerido Origen SesionOrigen
+------- ------------- ------ ------------
+banco -85148.5400 sin_sesion NULL
+caja 7250.0000 sin_sesion NULL
+Columna Nulabilidad
+------- -----------
+EmployeeId NULL permitido
+PagosDespues MovimientosCajaDespues SesionesCajaDespues
+------------ ---------------------- -------------------
+0 6 0
+Account SaldoInicial TotalEntradas TotalSalidas SaldoFinal Movimientos
+------- ------------ ------------- ------------ ---------- -----------
+banco .0000 45654.0000 130802.5400 -85148.5400 4
+caja .0000 8500.0000 1250.0000 7250.0000 2
+28: migracion aplicada correctamente.

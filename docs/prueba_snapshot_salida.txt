@@ -1,0 +1,7 @@
+﻿Resultado CashSessionId Account Currency SessionDate OpeningBalance OperationKey
+--------- ------------- ------- -------- ----------- -------------- ------------
+abierta cs-ff87c02bedb34db3b620241f52f99710 banco C$ 2026-10-20 5000.0000 snap-open-banco
+Resultado PaymentId PayrollRunId Amount ConfirmedPaymentsTotal netTotal pendingPayment fullyPaid IdempotencyKey CashMoveId revision
+--------- --------- ------------ ------ ---------------------- -------- -------------- --------- -------------- ---------- --------
+confirmada pay-5f011e08fd0a4326bb7fc87e4fd4565a TEST-SNAP-26 900.0000 900.0000 900.0000 .0000 1 55555555-5555-5555-5555-555555555555 cash-nom-TEST-SNAP-26 0x000000000000A591
+SNAPSHOT OK - el PUT de /api/state conserva cash-nom-*, aperturas y recibos (OperationKey no nulo).

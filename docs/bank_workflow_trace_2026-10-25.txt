@@ -1,0 +1,127 @@
+START query SELECT (SELECT COUNT(*) FROM dbo.CashSessions) AS sessions, (SELECT COUNT(*) FROM dbo.CashMoves) AS movem
+END 2539 query SELECT (SELECT COUNT(*) FROM dbo.CashSessions) AS sessions, (SELECT COUNT(*) FROM dbo.CashMoves) AS movem
+START query SELECT TOP(2) AppUserId AS id,Name AS name FROM dbo.AppUsers WHERE IsActive=1 ORDER BY AppUserId; SELECT 
+END 1226 query SELECT TOP(2) AppUserId AS id,Name AS name FROM dbo.AppUsers WHERE IsActive=1 ORDER BY AppUserId; SELECT 
+START query DECLARE @r INT; EXEC @r=sys.sp_getapplock @Resource=@Resource,@LockMode='Exclusive',@LockOwner='Transacti
+END 107 query DECLARE @r INT; EXEC @r=sys.sp_getapplock @Resource=@Resource,@LockMode='Exclusive',@LockOwner='Transacti
+START query DECLARE @r INT; EXEC @r=sys.sp_getapplock @Resource=@Resource,@LockMode='Exclusive',@LockOwner='Transacti
+END 6 query DECLARE @r INT; EXEC @r=sys.sp_getapplock @Resource=@Resource,@LockMode='Exclusive',@LockOwner='Transacti
+START query SELECT * FROM dbo.CashSessions WHERE OperationKey=@Key
+END 10 query SELECT * FROM dbo.CashSessions WHERE OperationKey=@Key
+START query SELECT CONVERT(DATE,SYSDATETIMEOFFSET() AT TIME ZONE 'Central America Standard Time') AS date
+END 6 query SELECT CONVERT(DATE,SYSDATETIMEOFFSET() AT TIME ZONE 'Central America Standard Time') AS date
+START execute dbo.usp_AbrirCaja
+END 221 execute dbo.usp_AbrirCaja
+START query UPDATE dbo.CashMoves SET MoveTime=CONVERT(TIME(0),SYSDATETIMEOFFSET() AT TIME ZONE 'Central America Stand
+END 352 query UPDATE dbo.CashMoves SET MoveTime=CONVERT(TIME(0),SYSDATETIMEOFFSET() AT TIME ZONE 'Central America Stand
+START query DECLARE @r INT; EXEC @r=sys.sp_getapplock @Resource=@Resource,@LockMode='Exclusive',@LockOwner='Transacti
+END 6 query DECLARE @r INT; EXEC @r=sys.sp_getapplock @Resource=@Resource,@LockMode='Exclusive',@LockOwner='Transacti
+START query DECLARE @r INT; EXEC @r=sys.sp_getapplock @Resource=@Resource,@LockMode='Exclusive',@LockOwner='Transacti
+END 4 query DECLARE @r INT; EXEC @r=sys.sp_getapplock @Resource=@Resource,@LockMode='Exclusive',@LockOwner='Transacti
+START query SELECT * FROM dbo.CashSessions WHERE OperationKey=@Key
+END 6 query SELECT * FROM dbo.CashSessions WHERE OperationKey=@Key
+START execute dbo.usp_AbrirCaja
+END 7 execute dbo.usp_AbrirCaja
+PASS apertura y reintento sin duplicacion
+START query DECLARE @r INT; EXEC @r=sys.sp_getapplock @Resource=@Resource,@LockMode='Exclusive',@LockOwner='Transacti
+END 2 query DECLARE @r INT; EXEC @r=sys.sp_getapplock @Resource=@Resource,@LockMode='Exclusive',@LockOwner='Transacti
+START query DECLARE @r INT; EXEC @r=sys.sp_getapplock @Resource=@Resource,@LockMode='Exclusive',@LockOwner='Transacti
+END 4 query DECLARE @r INT; EXEC @r=sys.sp_getapplock @Resource=@Resource,@LockMode='Exclusive',@LockOwner='Transacti
+START query SELECT * FROM dbo.CashMoves WHERE OperationKey=@Key
+END 12 query SELECT * FROM dbo.CashMoves WHERE OperationKey=@Key
+START query SELECT TOP(1) * FROM dbo.CashSessions WITH(UPDLOCK,HOLDLOCK) WHERE Account=@Account AND Status=N'abierta'
+END 12 query SELECT TOP(1) * FROM dbo.CashSessions WITH(UPDLOCK,HOLDLOCK) WHERE Account=@Account AND Status=N'abierta'
+START query SELECT CONVERT(VARCHAR(10),SYSDATETIMEOFFSET() AT TIME ZONE 'Central America Standard Time',23) AS date
+END 48 query SELECT CONVERT(VARCHAR(10),SYSDATETIMEOFFSET() AT TIME ZONE 'Central America Standard Time',23) AS date
+START execute dbo.usp_RegistrarMovimientoCaja
+END 250 execute dbo.usp_RegistrarMovimientoCaja
+START query DECLARE @latest DATETIMEOFFSET(3)=(SELECT MAX(CreatedAt) FROM dbo.CashMoves WHERE Account=@Account AND Ca
+END 52 query DECLARE @latest DATETIMEOFFSET(3)=(SELECT MAX(CreatedAt) FROM dbo.CashMoves WHERE Account=@Account AND Ca
+START query WITH Moves AS ( SELECT m.*, ROW_NUMBER() OVER(PARTITION BY m.Account ORDER BY CONVERT(DATE,m.MoveDate), I
+END 113 query WITH Moves AS ( SELECT m.*, ROW_NUMBER() OVER(PARTITION BY m.Account ORDER BY CONVERT(DATE,m.MoveDate), I
+START query DECLARE @r INT; EXEC @r=sys.sp_getapplock @Resource=@Resource,@LockMode='Exclusive',@LockOwner='Transacti
+END 5 query DECLARE @r INT; EXEC @r=sys.sp_getapplock @Resource=@Resource,@LockMode='Exclusive',@LockOwner='Transacti
+START query DECLARE @r INT; EXEC @r=sys.sp_getapplock @Resource=@Resource,@LockMode='Exclusive',@LockOwner='Transacti
+END 5 query DECLARE @r INT; EXEC @r=sys.sp_getapplock @Resource=@Resource,@LockMode='Exclusive',@LockOwner='Transacti
+START query SELECT * FROM dbo.CashMoves WHERE OperationKey=@Key
+END 10 query SELECT * FROM dbo.CashMoves WHERE OperationKey=@Key
+START execute dbo.usp_RegistrarMovimientoCaja
+END 107 execute dbo.usp_RegistrarMovimientoCaja
+START query DECLARE @r INT; EXEC @r=sys.sp_getapplock @Resource=@Resource,@LockMode='Exclusive',@LockOwner='Transacti
+END 5 query DECLARE @r INT; EXEC @r=sys.sp_getapplock @Resource=@Resource,@LockMode='Exclusive',@LockOwner='Transacti
+START query DECLARE @r INT; EXEC @r=sys.sp_getapplock @Resource=@Resource,@LockMode='Exclusive',@LockOwner='Transacti
+END 3 query DECLARE @r INT; EXEC @r=sys.sp_getapplock @Resource=@Resource,@LockMode='Exclusive',@LockOwner='Transacti
+START query SELECT * FROM dbo.CashMoves WHERE OperationKey=@Key
+END 12 query SELECT * FROM dbo.CashMoves WHERE OperationKey=@Key
+START query SELECT TOP(1) * FROM dbo.CashSessions WITH(UPDLOCK,HOLDLOCK) WHERE Account=@Account AND Status=N'abierta'
+END 10 query SELECT TOP(1) * FROM dbo.CashSessions WITH(UPDLOCK,HOLDLOCK) WHERE Account=@Account AND Status=N'abierta'
+START query SELECT CONVERT(VARCHAR(10),SYSDATETIMEOFFSET() AT TIME ZONE 'Central America Standard Time',23) AS date
+END 4 query SELECT CONVERT(VARCHAR(10),SYSDATETIMEOFFSET() AT TIME ZONE 'Central America Standard Time',23) AS date
+START query SELECT s.OpeningBalance+ ISNULL((SELECT SUM(CASE WHEN MoveType=N'entrada' THEN Amount ELSE -Amount END) F
+END 45 query SELECT s.OpeningBalance+ ISNULL((SELECT SUM(CASE WHEN MoveType=N'entrada' THEN Amount ELSE -Amount END) F
+START execute dbo.usp_RegistrarMovimientoCaja
+END 31 execute dbo.usp_RegistrarMovimientoCaja
+START query DECLARE @latest DATETIMEOFFSET(3)=(SELECT MAX(CreatedAt) FROM dbo.CashMoves WHERE Account=@Account AND Ca
+END 5 query DECLARE @latest DATETIMEOFFSET(3)=(SELECT MAX(CreatedAt) FROM dbo.CashMoves WHERE Account=@Account AND Ca
+START query WITH Moves AS ( SELECT m.*, ROW_NUMBER() OVER(PARTITION BY m.Account ORDER BY CONVERT(DATE,m.MoveDate), I
+END 48 query WITH Moves AS ( SELECT m.*, ROW_NUMBER() OVER(PARTITION BY m.Account ORDER BY CONVERT(DATE,m.MoveDate), I
+START query WITH Moves AS ( SELECT m.*, ROW_NUMBER() OVER(PARTITION BY m.Account ORDER BY CONVERT(DATE,m.MoveDate), I
+END 106 query WITH Moves AS ( SELECT m.*, ROW_NUMBER() OVER(PARTITION BY m.Account ORDER BY CONVERT(DATE,m.MoveDate), I
+PASS entrada 500, salida 200, saldo 1300 y movimiento visible
+START query DECLARE @r INT; EXEC @r=sys.sp_getapplock @Resource=@Resource,@LockMode='Exclusive',@LockOwner='Transacti
+END 13 query DECLARE @r INT; EXEC @r=sys.sp_getapplock @Resource=@Resource,@LockMode='Exclusive',@LockOwner='Transacti
+START query DECLARE @r INT; EXEC @r=sys.sp_getapplock @Resource=@Resource,@LockMode='Exclusive',@LockOwner='Transacti
+END 4 query DECLARE @r INT; EXEC @r=sys.sp_getapplock @Resource=@Resource,@LockMode='Exclusive',@LockOwner='Transacti
+START query SELECT * FROM dbo.CashMoves WHERE OperationKey=@Key
+END 17 query SELECT * FROM dbo.CashMoves WHERE OperationKey=@Key
+PASS misma clave con otros datos se rechaza
+START query DECLARE @r INT; EXEC @r=sys.sp_getapplock @Resource=@Resource,@LockMode='Exclusive',@LockOwner='Transacti
+END 11 query DECLARE @r INT; EXEC @r=sys.sp_getapplock @Resource=@Resource,@LockMode='Exclusive',@LockOwner='Transacti
+START query DECLARE @r INT; EXEC @r=sys.sp_getapplock @Resource=@Resource,@LockMode='Exclusive',@LockOwner='Transacti
+END 3 query DECLARE @r INT; EXEC @r=sys.sp_getapplock @Resource=@Resource,@LockMode='Exclusive',@LockOwner='Transacti
+START query SELECT * FROM dbo.CashMoves WHERE OperationKey=@Key
+END 4 query SELECT * FROM dbo.CashMoves WHERE OperationKey=@Key
+START query SELECT TOP(1) * FROM dbo.CashSessions WITH(UPDLOCK,HOLDLOCK) WHERE Account=@Account AND Status=N'abierta'
+END 17 query SELECT TOP(1) * FROM dbo.CashSessions WITH(UPDLOCK,HOLDLOCK) WHERE Account=@Account AND Status=N'abierta'
+START query SELECT CONVERT(VARCHAR(10),SYSDATETIMEOFFSET() AT TIME ZONE 'Central America Standard Time',23) AS date
+END 5 query SELECT CONVERT(VARCHAR(10),SYSDATETIMEOFFSET() AT TIME ZONE 'Central America Standard Time',23) AS date
+START query SELECT s.OpeningBalance+ ISNULL((SELECT SUM(CASE WHEN MoveType=N'entrada' THEN Amount ELSE -Amount END) F
+END 25 query SELECT s.OpeningBalance+ ISNULL((SELECT SUM(CASE WHEN MoveType=N'entrada' THEN Amount ELSE -Amount END) F
+PASS no permite salida superior al saldo
+START query SELECT Account FROM dbo.CashSessions WHERE CashSessionId=@Id
+END 33 query SELECT Account FROM dbo.CashSessions WHERE CashSessionId=@Id
+START query DECLARE @r INT; EXEC @r=sys.sp_getapplock @Resource=@Resource,@LockMode='Exclusive',@LockOwner='Transacti
+END 5 query DECLARE @r INT; EXEC @r=sys.sp_getapplock @Resource=@Resource,@LockMode='Exclusive',@LockOwner='Transacti
+START execute dbo.usp_ArquearYCerrarCaja
+END 81 execute dbo.usp_ArquearYCerrarCaja
+PASS arqueo y cierre sin diferencia
+START query WITH Moves AS ( SELECT m.*, ROW_NUMBER() OVER(PARTITION BY m.Account ORDER BY CONVERT(DATE,m.MoveDate), I
+END 1231 query WITH Moves AS ( SELECT m.*, ROW_NUMBER() OVER(PARTITION BY m.Account ORDER BY CONVERT(DATE,m.MoveDate), I
+PASS saldo sugerido para la siguiente apertura
+START query DECLARE @r INT; EXEC @r=sys.sp_getapplock @Resource=@Resource,@LockMode='Exclusive',@LockOwner='Transacti
+END 9 query DECLARE @r INT; EXEC @r=sys.sp_getapplock @Resource=@Resource,@LockMode='Exclusive',@LockOwner='Transacti
+START query DECLARE @r INT; EXEC @r=sys.sp_getapplock @Resource=@Resource,@LockMode='Exclusive',@LockOwner='Transacti
+END 2 query DECLARE @r INT; EXEC @r=sys.sp_getapplock @Resource=@Resource,@LockMode='Exclusive',@LockOwner='Transacti
+START query SELECT * FROM dbo.CashMoves WHERE OperationKey=@Key
+END 13 query SELECT * FROM dbo.CashMoves WHERE OperationKey=@Key
+START query SELECT TOP(1) * FROM dbo.CashSessions WITH(UPDLOCK,HOLDLOCK) WHERE Account=@Account AND Status=N'abierta'
+END 15 query SELECT TOP(1) * FROM dbo.CashSessions WITH(UPDLOCK,HOLDLOCK) WHERE Account=@Account AND Status=N'abierta'
+PASS no registra movimientos en la sesion cerrada
+START query DECLARE @r INT; EXEC @r=sys.sp_getapplock @Resource=@Resource,@LockMode='Exclusive',@LockOwner='Transacti
+END 5 query DECLARE @r INT; EXEC @r=sys.sp_getapplock @Resource=@Resource,@LockMode='Exclusive',@LockOwner='Transacti
+START query DECLARE @r INT; EXEC @r=sys.sp_getapplock @Resource=@Resource,@LockMode='Exclusive',@LockOwner='Transacti
+END 3 query DECLARE @r INT; EXEC @r=sys.sp_getapplock @Resource=@Resource,@LockMode='Exclusive',@LockOwner='Transacti
+START query SELECT * FROM dbo.CashSessions WHERE OperationKey=@Key
+END 9 query SELECT * FROM dbo.CashSessions WHERE OperationKey=@Key
+START query SELECT CONVERT(DATE,SYSDATETIMEOFFSET() AT TIME ZONE 'Central America Standard Time') AS date
+END 5 query SELECT CONVERT(DATE,SYSDATETIMEOFFSET() AT TIME ZONE 'Central America Standard Time') AS date
+START execute dbo.usp_AbrirCaja
+END 34 execute dbo.usp_AbrirCaja
+START query UPDATE dbo.CashMoves SET MoveTime=CONVERT(TIME(0),SYSDATETIMEOFFSET() AT TIME ZONE 'Central America Stand
+END 42 query UPDATE dbo.CashMoves SET MoveTime=CONVERT(TIME(0),SYSDATETIMEOFFSET() AT TIME ZONE 'Central America Stand
+START query WITH Moves AS ( SELECT m.*, ROW_NUMBER() OVER(PARTITION BY m.Account ORDER BY CONVERT(DATE,m.MoveDate), I
+END 45 query WITH Moves AS ( SELECT m.*, ROW_NUMBER() OVER(PARTITION BY m.Account ORDER BY CONVERT(DATE,m.MoveDate), I
+PASS reapertura mantiene 1300 sin duplicar el saldo anterior
+START query SELECT (SELECT COUNT(*) FROM dbo.CashSessions) AS sessions, (SELECT COUNT(*) FROM dbo.CashMoves) AS movem
+END 22 query SELECT (SELECT COUNT(*) FROM dbo.CashSessions) AS sessions, (SELECT COUNT(*) FROM dbo.CashMoves) AS movem
+ROLLBACK: registros conservados {"sessions":1,"movements":9,"payments":0}

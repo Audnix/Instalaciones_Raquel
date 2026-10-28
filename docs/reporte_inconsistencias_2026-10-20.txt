@@ -1,0 +1,46 @@
+﻿Changed database context to 'Instalaciones Raquel'.
+Seccion|Severidad|Referencia|Detalle|Esperado|Encontrado
+-------|---------|----------|-------|--------|----------
+1. Planilla: cabecera vs detalle|ALTA|2026-10-Q1 (1 al 15 Octubre) (PL-2026-10-Q1)|TotalDeductions de la cabecera no coincide con SUM(PayrollRunItems.TotalDeductions). Estado: pago_registrado|17088.4600|0.0000
+1. Planilla: cabecera vs detalle|ALTA|2026-T-fbrp3k (run-test-mvfbrouy)|TotalDeductions de la cabecera no coincide con SUM(PayrollRunItems.TotalDeductions). Estado: cerrada|32565.4200|0.0000
+1. Planilla: cabecera vs detalle|ALTA|TEST-DYN-7929 (run-mvfbxste-d83c30)|TotalDeductions de la cabecera no coincide con SUM(PayrollRunItems.TotalDeductions). Estado: conciliada|31875.1500|0.0000
+2. Planilla cerrada/pagada con deducciones en 0|ALTA|2026-10-Q1 (1 al 15 Octubre) (PL-2026-10-Q1)|Planilla en estado pago_registrado con TotalDeductions = 0 pero con deducciones en el detalle. Requiere respaldo y decision antes de corregir.|17088.4600|0.0000
+2. Planilla cerrada/pagada con deducciones en 0|ALTA|2026-T-fbrp3k (run-test-mvfbrouy)|Planilla en estado cerrada con TotalDeductions = 0 pero con deducciones en el detalle. Requiere respaldo y decision antes de corregir.|32565.4200|0.0000
+2. Planilla cerrada/pagada con deducciones en 0|ALTA|TEST-DYN-7929 (run-mvfbxste-d83c30)|Planilla en estado conciliada con TotalDeductions = 0 pero con deducciones en el detalle. Requiere respaldo y decision antes de corregir.|31875.1500|0.0000
+4. Planilla: pagos confirmados vs recibos|ALTA|2026-10-1Q (pr-2026-10-1)|ConfirmedPaymentsTotal no coincide con la suma de PayrollPayments. Estado: cerrada|0.0000|115802.5400
+4. Planilla: pagos confirmados vs recibos|ALTA|2026-10-Q1 (1 al 15 Octubre) (PL-2026-10-Q1)|ConfirmedPaymentsTotal no coincide con la suma de PayrollPayments. Estado: pago_registrado|0.0000|120945.6900
+4. Planilla: pagos confirmados vs recibos|ALTA|2026-T-fbrp3k (run-test-mvfbrouy)|ConfirmedPaymentsTotal no coincide con la suma de PayrollPayments. Estado: cerrada|0.0000|176735.0800
+4. Planilla: pagos confirmados vs recibos|ALTA|TEST-DYN-7929 (run-mvfbxste-d83c30)|ConfirmedPaymentsTotal no coincide con la suma de PayrollPayments. Estado: conciliada|0.0000|50000.0000
+6. Movimiento de nomina descuadrado|ALTA|csh-004|El movimiento de nomina de la planilla pr-2026-10-1 no coincide con la suma de pagos confirmados.|0.0000|115802.5400
+10. Efecto sin OperationKey|MEDIA|csh-001|Movimiento de caja historico sin OperationKey: no lo protege la clave de idempotencia (se conserva, no se borra).|OperationKey|NULL
+10. Efecto sin OperationKey|MEDIA|csh-002|Movimiento de caja historico sin OperationKey: no lo protege la clave de idempotencia (se conserva, no se borra).|OperationKey|NULL
+10. Efecto sin OperationKey|MEDIA|csh-003|Movimiento de caja historico sin OperationKey: no lo protege la clave de idempotencia (se conserva, no se borra).|OperationKey|NULL
+10. Efecto sin OperationKey|MEDIA|csh-004|Movimiento de caja historico sin OperationKey: no lo protege la clave de idempotencia (se conserva, no se borra).|OperationKey|NULL
+10. Efecto sin OperationKey|MEDIA|csh-005|Movimiento de caja historico sin OperationKey: no lo protege la clave de idempotencia (se conserva, no se borra).|OperationKey|NULL
+10. Efecto sin OperationKey|MEDIA|csh-006|Movimiento de caja historico sin OperationKey: no lo protege la clave de idempotencia (se conserva, no se borra).|OperationKey|NULL
+13b. Movimiento de caja sin sesion|MEDIA|csh-001|Movimiento anterior a las sesiones de caja: no se puede conciliar contra un arqueo. Cuenta: banco, concepto: Anticipo 50% segÃºn contrato Proyecto Ofiplaza Grupo HÃ¡bitat|SessionId|NULL
+13b. Movimiento de caja sin sesion|MEDIA|csh-002|Movimiento anterior a las sesiones de caja: no se puede conciliar contra un arqueo. Cuenta: banco, concepto: Cobro total de factura FACT-2026-00102 Plaza Sur|SessionId|NULL
+13b. Movimiento de caja sin sesion|MEDIA|csh-003|Movimiento anterior a las sesiones de caja: no se puede conciliar contra un arqueo. Cuenta: banco, concepto: Abono a proveedor Alumex de Nicaragua transferencia BANPRO|SessionId|NULL
+13b. Movimiento de caja sin sesion|MEDIA|csh-004|Movimiento anterior a las sesiones de caja: no se puede conciliar contra un arqueo. Cuenta: banco, concepto: DispersiÃ³n electrÃ³nica de salarios NÃ³mina 2026-10-1Q|SessionId|NULL
+13b. Movimiento de caja sin sesion|MEDIA|csh-005|Movimiento anterior a las sesiones de caja: no se puede conciliar contra un arqueo. Cuenta: caja, concepto: Venta de mostrador y retal de perfiles aluminio taller|SessionId|NULL
+13b. Movimiento de caja sin sesion|MEDIA|csh-006|Movimiento anterior a las sesiones de caja: no se puede conciliar contra un arqueo. Cuenta: caja, concepto: Gastos menores de taller: brocas para aluminio y lija de agua|SessionId|NULL
+15. Item: TotalDeductions desactualizada|ALTA|pr-2026-10-1 / emp-01|TotalDeductions del item no coincide con INSS laboral + IR + otras deducciones.|2606.3300|0.0000
+15. Item: TotalDeductions desactualizada|ALTA|pr-2026-10-1 / emp-02|TotalDeductions del item no coincide con INSS laboral + IR + otras deducciones.|2158.3300|0.0000
+15. Item: TotalDeductions desactualizada|ALTA|pr-2026-10-1 / emp-03|TotalDeductions del item no coincide con INSS laboral + IR + otras deducciones.|1870.3300|0.0000
+15. Item: TotalDeductions desactualizada|ALTA|pr-2026-10-1 / emp-04|TotalDeductions del item no coincide con INSS laboral + IR + otras deducciones.|893.8800|0.0000
+15. Item: TotalDeductions desactualizada|ALTA|pr-2026-10-1 / emp-05|TotalDeductions del item no coincide con INSS laboral + IR + otras deducciones.|967.2000|0.0000
+15. Item: TotalDeductions desactualizada|ALTA|pr-2026-10-1 / emp-06|TotalDeductions del item no coincide con INSS laboral + IR + otras deducciones.|820.5500|0.0000
+15. Item: TotalDeductions desactualizada|ALTA|pr-2026-10-1 / emp-07|TotalDeductions del item no coincide con INSS laboral + IR + otras deducciones.|1422.3300|0.0000
+15. Item: TotalDeductions desactualizada|ALTA|pr-2026-10-1 / emp-08|TotalDeductions del item no coincide con INSS laboral + IR + otras deducciones.|579.6300|0.0000
+15. Item: TotalDeductions desactualizada|ALTA|pr-2026-10-1 / emp-09|TotalDeductions del item no coincide con INSS laboral + IR + otras deducciones.|506.3000|0.0000
+15. Item: TotalDeductions desactualizada|ALTA|pr-2026-10-1 / emp-10|TotalDeductions del item no coincide con INSS laboral + IR + otras deducciones.|1262.3300|0.0000
+15. Item: TotalDeductions desactualizada|ALTA|pr-2026-10-1 / emp-11|TotalDeductions del item no coincide con INSS laboral + IR + otras deducciones.|2286.3300|0.0000
+15. Item: TotalDeductions desactualizada|ALTA|pr-2026-10-1 / emp-12|TotalDeductions del item no coincide con INSS laboral + IR + otras deducciones.|1155.7500|0.0000
+15. Item: TotalDeductions desactualizada|ALTA|pr-2026-10-1 / emp-13|TotalDeductions del item no coincide con INSS laboral + IR + otras deducciones.|841.5000|0.0000
+15. Item: TotalDeductions desactualizada|ALTA|pr-2026-10-1 / emp-14|TotalDeductions del item no coincide con INSS laboral + IR + otras deducciones.|3976.6700|0.0000
+18. Planilla pagada sin recibos|ALTA|2026-10-1Q (pr-2026-10-1)|Planilla en estado cerrada con ConfirmedPaymentsTotal > 0 pero sin filas en PayrollPayments.|>= 1 pago|0 pagos
+18. Planilla pagada sin recibos|ALTA|2026-10-Q1 (1 al 15 Octubre) (PL-2026-10-Q1)|Planilla en estado pago_registrado con ConfirmedPaymentsTotal > 0 pero sin filas en PayrollPayments.|>= 1 pago|0 pagos
+18. Planilla pagada sin recibos|ALTA|2026-T-fbrp3k (run-test-mvfbrouy)|Planilla en estado cerrada con ConfirmedPaymentsTotal > 0 pero sin filas en PayrollPayments.|>= 1 pago|0 pagos
+18. Planilla pagada sin recibos|ALTA|TEST-DYN-7929 (run-mvfbxste-d83c30)|Planilla en estado conciliada con ConfirmedPaymentsTotal > 0 pero sin filas en PayrollPayments.|>= 1 pago|0 pagos
+ 
+Fin del reporte. Ninguna fila fue modificada ni eliminada.

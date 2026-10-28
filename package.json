@@ -8,7 +8,15 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview --host",
     "lint": "eslint .",
-    "server": "node scripts/start-local.mjs"
+    "server": "node scripts/start-local.mjs",
+    "db:install": "node server/scripts/install-sqlserver.mjs",
+    "db:bootstrap-user": "node server/scripts/bootstrap-superadmin.mjs",
+    "db:rebuild": "node server/scripts/install-sqlserver.mjs --rebuild",
+    "db:plan": "node server/scripts/install-sqlserver.mjs --plan",
+    "db:bundle": "node server/scripts/install-sqlserver.mjs --bundle",
+    "test": "node --test server/tests/*.test.mjs",
+    "check:system": "node --test server/tests/*.test.mjs && npm run build",
+    "audit:operations": "node server/scripts/audit-operations-readonly.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.1.1",

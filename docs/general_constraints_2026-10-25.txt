@@ -1,0 +1,11 @@
+Changed database context to 'Instalaciones Raquel'.
+DisabledForeignKeys
+-------------------
+                  0
+
+(1 rows affected)
+uses_ansi_nulls uses_quoted_identifier
+--------------- ----------------------
+              1                      1
+
+(1 rows affected)

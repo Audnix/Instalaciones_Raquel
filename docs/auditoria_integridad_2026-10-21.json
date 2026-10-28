@@ -1,0 +1,63 @@
+{
+  "date": "2026-10-21",
+  "readOnly": true,
+  "counts": {
+    "payments": 0,
+    "runs": 6,
+    "items": 114,
+    "cashMoves": 6,
+    "sessions": 0
+  },
+  "findings": [
+    [
+      {
+        "PayrollRunId": "PL-2026-10-Q1",
+        "Status": "pago_registrado",
+        "HeaderDeductions": 0,
+        "ItemDeductions": 17088.46,
+        "HeaderNet": 120945.69,
+        "ItemNet": 122049.04,
+        "ConfirmedPaymentsTotal": 120945.69,
+        "ActualConfirmedPayments": 0,
+        "Finding": "Estado avanzado sin respaldo completo de pagos"
+      },
+      {
+        "PayrollRunId": "pr-2026-10-1",
+        "Status": "cerrada",
+        "HeaderDeductions": 0,
+        "ItemDeductions": 0,
+        "HeaderNet": 115802.54,
+        "ItemNet": 115802.54,
+        "ConfirmedPaymentsTotal": 115802.54,
+        "ActualConfirmedPayments": 0,
+        "Finding": "Estado avanzado sin respaldo completo de pagos"
+      },
+      {
+        "PayrollRunId": "run-mvfbxste-d83c30",
+        "Status": "conciliada",
+        "HeaderDeductions": 0,
+        "ItemDeductions": 31875.15,
+        "HeaderNet": 171424.85,
+        "ItemNet": 171424.85,
+        "ConfirmedPaymentsTotal": 50000,
+        "ActualConfirmedPayments": 0,
+        "Finding": "Estado avanzado sin respaldo completo de pagos"
+      },
+      {
+        "PayrollRunId": "run-test-mvfbrouy",
+        "Status": "cerrada",
+        "HeaderDeductions": 0,
+        "ItemDeductions": 32565.42,
+        "HeaderNet": 176735.08,
+        "ItemNet": 176735.08,
+        "ConfirmedPaymentsTotal": 176735.08,
+        "ActualConfirmedPayments": 0,
+        "Finding": "Estado avanzado sin respaldo completo de pagos"
+      }
+    ],
+    [],
+    [],
+    [],
+    []
+  ]
+}

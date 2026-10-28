@@ -1,0 +1,24 @@
+{
+  "date": "2026-10-21",
+  "schemaMarkers": {
+    "migration30": true,
+    "migration31": false,
+    "migration32": false
+  },
+  "applicationAccountCanAlterSchema": false,
+  "localServices": {
+    "apiPort": 4000,
+    "webPort": 5173,
+    "databaseHealth": 200
+  },
+  "observedRecords": {
+    "runs": 6,
+    "items": 114,
+    "cashMoves": 8,
+    "cashSessions": 1,
+    "payments": 0
+  },
+  "activeCashSessionPreserved": true,
+  "productionBuild": "passed",
+  "typecheck": "passed"
+}

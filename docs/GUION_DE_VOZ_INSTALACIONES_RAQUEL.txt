@@ -1,0 +1,73 @@
+GUION PARA GRABAR LA VOZ — INSTALACIONES RAQUEL
+
+Lee cada capítulo mientras reproduces su video. Haz pausas en las confirmaciones y adapta los importes a lo que realmente muestre la pantalla.
+
+Video 01 — Presentación y acceso
+
+En este recorrido presentaré el sistema Instalaciones Raquel. Mostraré cómo se organizan sus módulos y cómo se realiza una operación en orden: preparación de datos, compra y recepción de materiales, venta, cobro, gestión de personal y pago de nómina. Al final revisaré los resultados, la auditoría y el cierre de caja. Antes de comenzar compruebo que la sesión esté activa y que los datos se consulten desde SQL Server.
+
+────────────────────────────────────────
+
+Video 02 — Usuarios, roles y preparación técnica
+
+El acceso se organiza por jerarquía y área de trabajo. Tener acceso a una pantalla no significa tener autorización para aprobar un pago. En Base de datos verifico la cobertura de la estructura y reviso el control general de operaciones. Esta consulta permite identificar sesiones anteriores y diferencias que requieren respaldo documental. El archivo de estructura corresponde a instalaciones nuevas; no es necesario ejecutarlo para utilizar la base actual. También están disponibles los modelos y los requerimientos que documentan el sistema.
+
+────────────────────────────────────────
+
+Video 03 — Datos iniciales: producto, proveedor y cliente
+
+Primero preparo los datos maestros. El producto define el código, su descripción y el precio de venta, pero sus existencias se registran mediante movimientos de inventario. Después identifico al proveedor de los materiales y al cliente de la operación. Utilizar los mismos registros durante el recorrido mantiene la información consistente y evita duplicar nombres o expedientes.
+
+────────────────────────────────────────
+
+Video 04 — Compra, recepción e inventario
+
+Registro la recepción de diez unidades a un costo de cuatrocientos córdobas cada una. El sistema incorpora las existencias y su movimiento de entrada. En Inventario compruebo el lote y la referencia de la compra. El método PEPS permite seguir el costo de los materiales por antigüedad. Esta recepción genera inventario y una obligación con el proveedor; todavía no representa una salida de dinero.
+
+────────────────────────────────────────
+
+Video 05 — Proforma, factura y costo de salida
+
+La proforma presenta una propuesta comercial y no descuenta existencias. Cuando se confirma la venta, convierto la proforma en una factura. Reviso el descuento, el impuesto y el total calculado por la pantalla. Ahora el inventario refleja la salida de dos unidades y conserva ocho. La factura deja una cuenta por cobrar; el ingreso de efectivo se confirma en Caja o Bancos cuando realmente se recibe. No registro dos veces la misma venta.
+
+────────────────────────────────────────
+
+Video 06 — Proyecto y producción
+
+El módulo de Proyectos permite identificar la obra y su avance. En Producción registro la orden de taller y sigo sus etapas: pendiente, corte, ensamble, instalación y entrega. Cada cambio debe representar trabajo realmente realizado. El tablero permite visualizar las órdenes activas y sus responsables, mientras el código de referencia facilita buscar la operación durante la revisión.
+
+────────────────────────────────────────
+
+Video 07 — Caja, cobro de la factura y Bancos
+
+Antes de operar verifico que la sesión corresponda al día. La base del período representa el saldo inicial y se mantiene separada de las entradas por cobros. Ahora registro el cobro de la factura por el importe mostrado en el documento. Después de confirmar, compruebo el movimiento y el nuevo saldo. El medio determina la cuenta: el efectivo corresponde a Caja y los medios bancarios corresponden a Bancos. La misma entrega de dinero no debe registrarse en ambas cuentas.
+
+────────────────────────────────────────
+
+Video 08 — Talento humano y expedientes
+
+La nómina parte de información laboral consistente. En Talento humano reviso el cargo, el área, el salario y la fecha de ingreso de cada persona. El expediente reúne el seguimiento del trabajador. Las secciones de contratos, asistencia, permisos y seguridad aportan contexto a la gestión del personal. Para este ejercicio utilizaré dos trabajadores con remuneraciones distintas, de modo que cada pago conserve su propio cálculo y su saldo pendiente.
+
+────────────────────────────────────────
+
+Video 09 — Crear, calcular, revisar y aprobar la nómina
+
+Creo una planilla con un período definido e incluyo a sus trabajadores. Reviso el tiempo reconocido y las novedades antes de calcular. El sistema obtiene los importes individuales con las reglas configuradas y permite consultar su explicación. Después reviso las validaciones y los totales. El flujo pasa de borrador a calculada, revisada y aprobada. La aprobación habilita el pago, pero todavía no significa que el dinero haya sido entregado.
+
+────────────────────────────────────────
+
+Video 10 — Pagar a una persona, abonar y obtener comprobantes
+
+El pago se realiza por trabajador. Selecciono a una persona y reviso su neto aprobado y su pendiente. En este ejercicio registro un abono parcial. Después de la confirmación, el sistema reduce únicamente el saldo de esa persona y conserva la referencia de la entrega. Al seleccionar otro trabajador aparecen sus propios importes. Los siguientes abonos se realizan sobre el pendiente actualizado. La conciliación y el cierre se completan cuando los pagos están respaldados y no quedan diferencias pendientes.
+
+────────────────────────────────────────
+
+Video 11 — Revisar Finanzas, Contabilidad, Mercadotecnia y Reportes
+
+Después de operar reviso los resultados. Finanzas organiza las cifras de gestión y sus proyecciones. Contabilidad permite consultar los asientos, comprobar el equilibrio y exportar los libros. Las referencias ayudan a localizar el origen de cada documento. En Mercadotecnia reviso la información comercial y el catálogo disponible. Finalmente, consulto los reportes del período. Estas vistas se interpretan según su fuente: facturación, clasificación financiera y efectivo no representan exactamente el mismo hecho.
+
+────────────────────────────────────────
+
+Video 12 — Arqueo final, auditoría y conclusión
+
+Para concluir reviso los movimientos del día y comparo el saldo esperado con el importe contado. El arqueo deja documentadas las diferencias y su revisión. Después consulto la auditoría y vuelvo al control general para comprobar los pendientes. Durante el recorrido registré los datos iniciales, recibí materiales, elaboré la documentación comercial y mostré el control de cobros y pagos individuales. El sistema ayuda a mantener orden y trazabilidad; la confirmación del dinero entregado, los conteos y las aprobaciones corresponden a los responsables. Con esto finaliza la demostración de Instalaciones Raquel.

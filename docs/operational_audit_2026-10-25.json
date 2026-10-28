@@ -1,0 +1,37 @@
+{
+  "readOnly": true,
+  "checkedAt": "2026-10-26T02:27:18.031Z",
+  "snapshotAvailable": true,
+  "issues": [],
+  "collections": {
+    "products": 12,
+    "lots": 10,
+    "kardex": 6,
+    "sales": 3,
+    "proformas": 2,
+    "promotions": 4,
+    "purchases": 3,
+    "accounting": 5,
+    "finance": 6,
+    "projections": 5,
+    "production": 5,
+    "parties": 10,
+    "employees": 14,
+    "payrollRuns": 1,
+    "albums": 2,
+    "projects": 5,
+    "cash": 6,
+    "users": 7,
+    "audit": 6
+  },
+  "staleSessions": [
+    {
+      "sessionDate": "2026-10-21",
+      "account": "caja"
+    }
+  ],
+  "payroll": {
+    "unverifiedPayrolls": 3
+  },
+  "scope": "Validación del estado operativo guardado y comprobaciones de sesiones y pagos. Los hallazgos históricos requieren revisión; no se corrigen importes automáticamente."
+}

@@ -8,6 +8,7 @@ import RequirementsPage from "./RequirementsPage";
 import { ModuleWorkspace } from "./ModuleWorkspace";
 import UsersPage from "./UsersPage";
 import type { ModuleId } from "../types/erp";
+import { GlobalOperationControl } from '../components/GlobalOperationControl';
 
 export default function ModulePage() {
   const { moduleId } = useParams();
@@ -30,5 +31,7 @@ export default function ModulePage() {
   if (module.id === "metodologia") return <MethodologyPage />;
   if (module.id === "ers") return <RequirementsPage />;
   if (module.id === "datos") return <DataHubPage />;
-  return <ModuleWorkspace moduleId={module.id as ModuleId} />;
+  const workspace = <ModuleWorkspace key={module.id} moduleId={module.id as ModuleId} />;
+  return ['rrhh','nomina','caja','bancos','proveedores'].includes(module.id)
+    ? workspace : <GlobalOperationControl>{workspace}</GlobalOperationControl>;
 }

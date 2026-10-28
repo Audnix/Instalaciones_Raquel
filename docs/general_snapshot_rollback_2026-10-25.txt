@@ -1,0 +1,3 @@
+PASS guardado completo en transacción exterior sin commit real
+PASS factura, stock, kardex y asiento guardados juntos; sin inventar un cobro de caja
+ROLLBACK confirmado: estado y conteos originales conservados {"employees":22,"movements":9,"payments":0,"sales":3,"lots":10}

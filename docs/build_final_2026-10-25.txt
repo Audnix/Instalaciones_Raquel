@@ -1,0 +1,33 @@
+
+> instalaciones-raquel-erp@0.1.0 build
+> tsc -b && vite build
+
+vite v5.4.21 building for production...
+transforming...
+✓ 2953 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                                0.75 kB │ gzip:   0.40 kB
+dist/assets/logo-window-CYHu2Ac4.png          64.72 kB
+dist/assets/index-BNIdhvWv.css                78.22 kB │ gzip:  13.14 kB
+dist/assets/circle-check-fdLDyeSR.js           0.34 kB │ gzip:   0.27 kB
+dist/assets/share-2-BtiIwPO6.js                0.52 kB │ gzip:   0.33 kB
+dist/assets/shield-alert-1m1PtIzz.js           0.52 kB │ gzip:   0.36 kB
+dist/assets/refresh-cw-C2ExCSBy.js             0.77 kB │ gzip:   0.38 kB
+dist/assets/lock-SOi11HyK.js                   0.85 kB │ gzip:   0.44 kB
+dist/assets/x-C2Wl1fMJ.js                      1.21 kB │ gzip:   0.50 kB
+dist/assets/wallet-DdS01Prb.js                 1.52 kB │ gzip:   0.55 kB
+dist/assets/Ui-PKTZhZag.js                     1.66 kB │ gzip:   0.78 kB
+dist/assets/CatalogAlbumPage-BthPvJUJ.js       4.66 kB │ gzip:   1.76 kB
+dist/assets/MyTasksPage-D8y1UTu0.js            5.12 kB │ gzip:   1.77 kB
+dist/assets/InvitationPage-C6J2DGZe.js         6.61 kB │ gzip:   2.37 kB
+dist/assets/AlbumStudio-CNXI-k1W.js            6.93 kB │ gzip:   2.96 kB
+dist/assets/Dashboard-BzesMWTi.js              9.09 kB │ gzip:   3.09 kB
+dist/assets/ValidateInvoicePage-Czlfw2_B.js   14.89 kB │ gzip:   5.07 kB
+dist/assets/Login-Br5FNnbI.js                 20.93 kB │ gzip:   6.50 kB
+dist/assets/forms-Cgn5uVLL.js                 81.30 kB │ gzip:  22.33 kB
+dist/assets/motion-RXyLZBlu.js               137.19 kB │ gzip:  45.26 kB
+dist/assets/index-CftJyBbh.js                144.71 kB │ gzip:  44.74 kB
+dist/assets/charts-DCPGcTnv.js               568.25 kB │ gzip: 158.15 kB
+dist/assets/ModulePage-DbrV4Jk2.js           571.99 kB │ gzip: 129.53 kB
+✓ built in 57.34s
