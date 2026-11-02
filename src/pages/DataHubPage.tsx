@@ -1,6 +1,6 @@
 import { DatabaseScriptPanel } from "../components/DatabaseScriptPanel";
 import { FormEvent, useMemo, useState, type ReactNode } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Database, GitBranch, Layers3, Link2, ShieldCheck, Workflow } from "lucide-react";
 import { useAuth } from "../auth/AuthContext";
@@ -23,11 +23,13 @@ type Tab = "scripts" | "resumen" | "modelo" | "clases" | "objetos" | "acid" | "t
 
 const groups = ["Gobierno", "Catálogo", "Operación", "Finanzas"] as const;
 
-export default function DataHubPage() {
+export default function DataHubPage({ productsOnly = false }: { productsOnly?: boolean }) {
   const { db, addProduct, deleteProduct, stockOf, syncStatus, saving } = useErp();
   const { user, can } = useAuth();
-  const write = can("datos", "write") && syncStatus === 'connected' && !saving && user?.hierarchy === 'superadmin';
-  const [tab, setTab] = useState<Tab>("resumen");
+  const { search } = useLocation();
+  const write = can("datos", "write") && syncStatus === 'connected' && !saving;
+  const [tab, setTab] = useState<Tab>(productsOnly || new URLSearchParams(search).get('vista') === 'productos' ? "productos" : "resumen");
+  const [formError, setFormError] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState("venta");
   const [tableKey, setTableKey] = useState<keyof ErpDatabase>("sales");
   const [saleId, setSaleId] = useState(db.sales[0]?.id ?? "");
@@ -49,11 +51,18 @@ export default function DataHubPage() {
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
+    if (!write) return;
+    const code = String(data.get("code")).trim();
+    if (db.products.some(product => product.code.trim().toLowerCase() === code.toLowerCase())) {
+      setFormError('Ya existe un producto con ese código. Busca el registro existente.');
+      return;
+    }
+    setFormError(null);
     addProduct(
       {
-        code: String(data.get("code")),
-        name: String(data.get("name")),
-        category: String(data.get("category")),
+        code,
+        name: String(data.get("name")).trim(),
+        category: String(data.get("category")).trim(),
         unitPrice: Number(data.get("unitPrice")),
         minQuantity: Number(data.get("minQuantity"))
       },
@@ -73,9 +82,10 @@ export default function DataHubPage() {
       <PageHeader
         kicker="Gobierno"
         title="Base de datos"
-        subtitle="Productos, lotes, ventas y asientos en el mismo almacén."
+        subtitle={productsOnly ? "Registro de productos y consulta de existencias." : "Productos, lotes, ventas y asientos en el mismo almacén."}
         actions={
           <div className="flex flex-wrap gap-2">
+            {can('inventario', 'read') && <Link to="/inventario"><Button variant="secondary">Volver a Inventario</Button></Link>}
             <Link to="/metodologia"><Button variant="secondary">Modelos</Button></Link>
             <Link to="/ers"><Button variant="ghost">Requerimientos</Button></Link>
           </div>
@@ -84,7 +94,7 @@ export default function DataHubPage() {
 
       {tab === "scripts" && <DatabaseScriptPanel allowed={user?.hierarchy === "superadmin"} />}
 
-      <section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-brand-900 via-brand-700 to-cyan-600 p-5 text-white shadow-soft">
+      {!productsOnly && <section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-brand-900 via-brand-700 to-cyan-600 p-5 text-white shadow-soft">
         <div className="pointer-events-none absolute -right-10 top-0 h-40 w-40 rounded-full bg-white/10 blur-2xl" />
         <div className="relative grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <Pulse icon={<Database size={18} />} label="Entidades" value={String(schemaEntities.length)} hint="Catálogo maestro" />
@@ -92,7 +102,7 @@ export default function DataHubPage() {
           <Pulse icon={<ShieldCheck size={18} />} label="Partida doble" value={balanced ? "OK" : "Descuadre"} hint={balanced ? "Débito = crédito" : "Revisar asientos"} />
           <Pulse icon={<Workflow size={18} />} label="Inventario PEPS" value="" amount={inventoryValue} hint="Lotes en bodega" />
         </div>
-      </section>
+      </section>}
 
       <div className="flex flex-wrap gap-2">
         {(
@@ -106,7 +116,7 @@ export default function DataHubPage() {
             ["tablas", "Tablas"],
             ["productos", "Productos"]
           ] as const
-        ).map(([id, label]) => (
+        ).filter(([id]) => !productsOnly || id === 'productos').map(([id, label]) => (
           <Button key={id} variant={tab === id ? "primary" : "secondary"} onClick={() => setTab(id)}>
             {label}
           </Button>
@@ -283,11 +293,12 @@ export default function DataHubPage() {
 
       {tab === "productos" && (
         <div className="space-y-4">
+          {formError && <p role="alert" className="text-red-700">{formError}</p>}
           {write && (
             <form onSubmit={submit} className="grid gap-3 rounded-lg bg-white p-4 shadow-soft dark:bg-slate-900 md:grid-cols-5">
-              <Field label="Código"><input name="code" required className={inputClass} /></Field>
-              <Field label="Nombre"><input name="name" required className={inputClass} /></Field>
-              <Field label="Categoría"><input name="category" required className={inputClass} /></Field>
+              <Field label="Código"><input name="code" required maxLength={80} className={inputClass} /></Field>
+              <Field label="Nombre"><input name="name" required maxLength={200} className={inputClass} /></Field>
+              <Field label="Categoría"><input name="category" required maxLength={120} className={inputClass} /></Field>
               <Field label="Precio"><input name="unitPrice" type="number" min={0} step="0.01" required className={inputClass} /></Field>
               <Field label="Mínimo"><input name="minQuantity" type="number" min={0} step="0.01" required className={inputClass} /></Field>
               <div className="md:col-span-5"><Button>Alta de producto</Button></div>
@@ -306,7 +317,7 @@ export default function DataHubPage() {
                     </div>
                     <StatusPill tone={stock < item.minQuantity ? "bad" : "ok"}>{stock < item.minQuantity ? "Crítico" : "OK"}</StatusPill>
                   </div>
-                  {write && <Button variant="danger" className="mt-3" onClick={() => {
+                  {write && user?.hierarchy === 'superadmin' && <Button variant="danger" className="mt-3" onClick={() => {
                     if (!deleteProduct(item.id, user?.name ?? "sistema")) {
                       window.alert("No se puede eliminar: el producto tiene movimientos o documentos asociados.");
                     }

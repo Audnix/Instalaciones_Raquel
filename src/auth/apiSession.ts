@@ -36,15 +36,17 @@ function migrateLegacySession() {
 export function saveAuthSession(token: string, user: SessionUser, remember: boolean) {
   const target = remember ? localStorage : sessionStorage;
   const other = remember ? sessionStorage : localStorage;
+  const serialized = JSON.stringify(user);
+  const changed = target.getItem(TOKEN_KEY) !== token || target.getItem(USER_KEY) !== serialized;
+  other.removeItem(TOKEN_KEY);
+  other.removeItem(USER_KEY);
   for (const storage of [target, other]) {
-    storage.removeItem(TOKEN_KEY);
-    storage.removeItem(USER_KEY);
     for (const key of LEGACY_TOKEN_KEYS) storage.removeItem(key);
     for (const key of LEGACY_USER_KEYS) storage.removeItem(key);
   }
-  target.setItem(TOKEN_KEY, token);
-  target.setItem(USER_KEY, JSON.stringify(user));
-  window.dispatchEvent(new Event("raquel-auth-changed"));
+  if (target.getItem(TOKEN_KEY) !== token) target.setItem(TOKEN_KEY, token);
+  if (target.getItem(USER_KEY) !== serialized) target.setItem(USER_KEY, serialized);
+  if (changed) window.dispatchEvent(new Event("raquel-auth-changed"));
 }
 
 export function readAuthUser(): SessionUser | null {

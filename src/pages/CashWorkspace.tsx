@@ -1,3 +1,4 @@
+import {InvoiceCollectionPanel,type InvoiceBalance} from "../components/InvoiceCollectionPanel";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AlertTriangle, ArrowDownCircle, ArrowUpCircle, Banknote, Landmark, Lock, RefreshCw, ShieldCheck } from "lucide-react";
 import { useAuth } from "../auth/AuthContext";
@@ -161,6 +162,7 @@ export function CashWorkspace({ account }: { account: Account }) {
   const [showOpenForm, setShowOpenForm] = useState(false);
   const [movementType, setMovementType] = useState<"entrada" | "salida">("entrada");
   const movementFormRef = useRef<HTMLFormElement>(null);
+  const [invoiceRefresh,setInvoiceRefresh]=useState(0);
   const sessionSectionRef = useRef<HTMLElement>(null);
   const ledgerSectionRef = useRef<HTMLElement>(null);
   const [reviewNotes, setReviewNotes] = useState("");
@@ -347,6 +349,7 @@ export function CashWorkspace({ account }: { account: Account }) {
       setNotice(payload.message);
       keys.current.movement = newOperationKey();
       form.reset();
+      setInvoiceRefresh(value=>value+1);
       await load();
     } catch (err) {
       // La clave se conserva a propósito: si el usuario reintenta, el servidor
@@ -453,6 +456,15 @@ export function CashWorkspace({ account }: { account: Account }) {
     }
   };
 
+  const prepareInvoiceCollection=(balance:InvoiceBalance)=>{
+    const form=movementFormRef.current;
+    if(!form||!canRegister||busy)return;
+    setMovementType('entrada');
+    const values={amount:balance.pending.toFixed(2),concept:`Cobro factura ${balance.saleNumber}`,documentType:'venta',documentRef:balance.saleNumber};
+    Object.entries(values).forEach(([name,value])=>{const field=form.elements.namedItem(name);if(field instanceof HTMLInputElement||field instanceof HTMLSelectElement)field.value=value;});
+    form.scrollIntoView({behavior:'smooth',block:'center'});
+    const amount=form.elements.namedItem('amount');if(amount instanceof HTMLInputElement)amount.focus({preventScroll:true});
+  };
   const AccountIcon = account === "caja" ? Banknote : Landmark;
 
   return (
@@ -493,6 +505,12 @@ export function CashWorkspace({ account }: { account: Account }) {
         <div className="rounded-2xl border border-emerald-300 bg-emerald-50 p-3 text-xs font-semibold text-emerald-700 dark:border-emerald-800/50 dark:bg-emerald-950/30 dark:text-emerald-200">
           {notice}
         </div>
+      )}
+      {connected && sessions.some(session=>session.explanation?.startsWith('[CIERRE SIMULADO - DATOS DE PRUEBA]')) && (
+        <details className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200">
+          <summary className="cursor-pointer font-semibold">Historial con cierres simulados de prueba</summary>
+          {sessions.filter(session=>session.explanation?.startsWith('[CIERRE SIMULADO - DATOS DE PRUEBA]')).map(session=><p key={session.id} className="mt-2">Sesión del {formatDateTime(session.sessionDate)}: {session.explanation}</p>)}
+        </details>
       )}
 
       {connected && openSession && sessionBlock && (
@@ -582,6 +600,8 @@ export function CashWorkspace({ account }: { account: Account }) {
         </div>
       </div>
 
+      <InvoiceCollectionPanel enabled={canWrite} canPrepare={canRegister && !busy} refresh={invoiceRefresh} onPrepare={prepareInvoiceCollection}/>
+
       {canRegister && (
         <form ref={movementFormRef} onSubmit={submitMovement} className="grid gap-3 rounded-2xl bg-white p-4 shadow-soft dark:border-white/10 dark:bg-slate-900 md:grid-cols-6">
           <div className="md:col-span-6">
@@ -617,7 +637,8 @@ export function CashWorkspace({ account }: { account: Account }) {
             </select>
           </Field>
           <Field label="Referencia">
-            <input name="documentRef" maxLength={120} className={inputClass} placeholder="F-1042 / LOTE-ACH" />
+            <input name="documentRef" maxLength={120} className={inputClass} placeholder="Número exacto de factura / referencia" />
+            <p className="mt-1 text-[10px] text-slate-500">Venta y cobro requieren el número exacto de factura. Para ingresos sin factura selecciona Otro.</p>
           </Field>
           <div className="md:col-span-6 flex flex-wrap items-center justify-between gap-2">
             <p className="text-[10px] text-slate-500">
@@ -749,9 +770,9 @@ export function CashWorkspace({ account }: { account: Account }) {
                   className={inputClass}
                   placeholder="Nota de revisión"
                 />
-                <Button type="button" onClick={() => void reviewSession("revisado")} disabled={busy === "review"}>Revisado</Button>
+                <Button type="button" onClick={() => void reviewSession("revisado")} disabled={busy === "review"}>Marcar como revisado</Button>
                 <Button type="button" variant="secondary" onClick={() => void reviewSession("observado")} disabled={busy === "review"}>
-                  Observado
+                  Marcar como observado
                 </Button>
               </div>
             )}
@@ -826,9 +847,10 @@ export function CashWorkspace({ account }: { account: Account }) {
                     <button
                       type="button"
                       className="rounded-lg border border-slate-200 px-2 py-1 text-[10px] font-bold text-slate-600 hover:bg-slate-50 dark:border-white/10 dark:text-slate-300"
+                      aria-expanded={expanded === item.id}
                       onClick={() => setExpanded((current) => (current === item.id ? null : item.id))}
                     >
-                      {expanded === item.id ? "Ocultar" : "Ver documento"}
+                      {expanded === item.id ? "Ocultar detalle" : "Ver detalle del movimiento"}
                     </button>
                     {expanded === item.id && (
                       <div className="mt-2 rounded-lg bg-slate-50 p-2 text-left text-[10px] text-slate-600 dark:bg-slate-950 dark:text-slate-300">

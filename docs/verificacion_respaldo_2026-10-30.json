@@ -1,0 +1,28 @@
+{
+  "readOnly": true,
+  "checkedAt": "2026-10-31T03:53:24.493Z",
+  "backupFinishedAt": "2026-10-25T20:32:07",
+  "verifyOnlyPassed": true,
+  "verificationCompleted": true,
+  "restored": true,
+  "evidence": "Captura de SSMS proporcionada por el usuario: The backup set on file 1 is valid.",
+  "verificationRecordedAt": "2026-10-31T03:56:50.487Z",
+  "previousAttempt": {
+    "reason": "SQL_PERMISSION_DENIED",
+    "detail": "La cuenta de aplicación no tiene CREATE DATABASE en master, permiso requerido por SQL Server para RESTORE VERIFYONLY."
+  },
+  "scope": "VERIFYONLY y restauración confirmados por capturas de SSMS; pruebas de servicios y persistencia realizadas con rollback en la copia. La revisión visual del navegador sigue pendiente.",
+  "restoreEvidence": {
+    "source": "Captura de SSMS proporcionada por el usuario",
+    "database": "Instalaciones_Raquel_Prueba_20261030",
+    "state": "ONLINE",
+    "counts": {
+      "sales": 3,
+      "lots": 10,
+      "payrollRuns": 7
+    },
+    "recordedAt": "2026-10-31T04:10:04.178Z",
+    "checkDbNoErrorsConfirmed": true,
+    "messagesEvidence": "Captura de Mensajes de SSMS: RESTORE DATABASE successfully processed; ejecución posterior a CHECKDB sin errores visibles y mensaje final del script."
+  }
+}

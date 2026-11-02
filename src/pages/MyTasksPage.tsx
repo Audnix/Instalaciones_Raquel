@@ -1,47 +1,45 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { CheckCircle2, AlertCircle, Clock, ArrowRight, RefreshCw, ListTodo } from "lucide-react";
+import { CheckCircle2, ArrowRight, RefreshCw } from "lucide-react";
+import { authenticatedFetch } from "../auth/apiSession";
+import { getApiBaseUrl } from "../lib/apiBase";
+import { useSessionView } from "../lib/useSessionView";
+import { parseTaskResponse, type ErpTask } from "../lib/taskResponse";
 import { useAuth } from "../auth/AuthContext";
 import { Button } from "../components/Button";
 import { PageHeader, StatusPill } from "../components/Ui";
-
-interface ErpTask {
-  id: string;
-  module: string;
-  title: string;
-  detail: string;
-  priority: "alta" | "media" | "baja";
-  actionUrl: string;
-  actionLabel: string;
-}
 
 export default function MyTasksPage() {
   const { user } = useAuth();
   const [tasks, setTasks] = useState<ErpTask[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<"todas" | "alta" | "media">("todas");
+  const [filter, setFilter] = useSessionView<"todas" | "alta" | "media">("priority", "todas");
 
-  const loadTasks = async () => {
+  const [error, setError] = useState("");
+  const requestVersion = useRef(0);
+  const loadTasks = useCallback(async () => {
+    const version = ++requestVersion.current;
     setLoading(true);
     try {
-      const token = localStorage.getItem("raquel_token") || sessionStorage.getItem("raquel_token");
-      const res = await fetch("/api/tasks/my-tasks", {
-        headers: token ? { Authorization: `Bearer ${token}` } : {}
-      });
+      setError("");
+      const res = await authenticatedFetch(`${getApiBaseUrl()}/api/tasks/my-tasks`);
+      if (!res.ok) throw new Error("No se pudieron consultar los pendientes.");
       if (res.ok) {
-        const data = await res.json();
-        setTasks(data.tasks || []);
+        const tasks = parseTaskResponse(await res.json());
+        if (version === requestVersion.current) setTasks(tasks);
       }
     } catch {
-      // Si falla API, tareas vacías
+      if (version === requestVersion.current) setError("No se pudieron consultar los pendientes. Pulse Actualizar para reintentar.");
     } finally {
-      setLoading(false);
+      if (version === requestVersion.current) setLoading(false);
     }
-  };
+  }, [user?.id]);
 
   useEffect(() => {
+    setTasks([]);
     void loadTasks();
-  }, []);
+    return () => { requestVersion.current += 1; };
+  }, [loadTasks]);
 
   const filteredTasks = tasks.filter((t) => {
     if (filter === "todas") return true;
@@ -61,6 +59,7 @@ export default function MyTasksPage() {
         <Button
           variant="secondary"
           icon={<RefreshCw size={16} className={loading ? "animate-spin" : ""} />}
+          disabled={loading}
           onClick={() => void loadTasks()}
         >
           Actualizar
@@ -71,14 +70,14 @@ export default function MyTasksPage() {
         <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-soft dark:border-white/10 dark:bg-slate-900">
           <p className="text-xs font-bold uppercase text-slate-400">Total Pendientes</p>
           <div className="mt-1 flex items-baseline gap-2">
-            <span className="text-2xl font-black text-slate-800 dark:text-white">{tasks.length}</span>
+            <span className="text-2xl font-black text-slate-800 dark:text-white">{loading || error ? "—" : tasks.length}</span>
             <span className="text-xs text-slate-500">en su bandeja</span>
           </div>
         </div>
         <div className="rounded-2xl border border-rose-200 bg-rose-50/50 p-4 shadow-soft dark:border-rose-900/30 dark:bg-rose-950/20">
           <p className="text-xs font-bold uppercase text-rose-500">Prioridad Alta</p>
           <div className="mt-1 flex items-baseline gap-2">
-            <span className="text-2xl font-black text-rose-700 dark:text-rose-300">{highCount}</span>
+            <span className="text-2xl font-black text-rose-700 dark:text-rose-300">{loading || error ? "—" : highCount}</span>
             <span className="text-xs text-rose-600/80">requieren atención pronta</span>
           </div>
         </div>
@@ -100,7 +99,7 @@ export default function MyTasksPage() {
               : "text-slate-500 hover:bg-slate-100 dark:hover:bg-white/10"
           }`}
         >
-          Todas ({tasks.length})
+          Todas ({loading || error ? "—" : tasks.length})
         </button>
         <button
           onClick={() => setFilter("alta")}
@@ -110,7 +109,7 @@ export default function MyTasksPage() {
               : "text-slate-500 hover:bg-slate-100 dark:hover:bg-white/10"
           }`}
         >
-          Alta prioridad ({highCount})
+          Alta prioridad ({loading || error ? "—" : highCount})
         </button>
       </div>
 
@@ -119,12 +118,14 @@ export default function MyTasksPage() {
           <RefreshCw className="mx-auto h-8 w-8 animate-spin text-brand-500 mb-2" />
           <p className="text-sm">Consultando tareas y pendientes de su área...</p>
         </div>
+      ) : error ? (
+        <div role="alert" className="rounded-xl border border-rose-300 p-4 text-rose-700 dark:text-rose-300">{error}</div>
       ) : filteredTasks.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-slate-300 p-12 text-center dark:border-white/10">
           <CheckCircle2 className="mx-auto h-12 w-12 text-emerald-500 mb-3" />
-          <h3 className="text-lg font-bold text-slate-800 dark:text-white">Al día en sus tareas</h3>
+          <h3 className="text-lg font-bold text-slate-800 dark:text-white">{tasks.length ? "Sin pendientes para este filtro" : "Al día en sus tareas"}</h3>
           <p className="text-sm text-slate-500 mt-1 max-w-sm mx-auto">
-            No tiene pendientes urgentes asignados a su puesto en este momento.
+            {tasks.length ? "Tiene otros pendientes disponibles. Seleccione Todas para consultarlos." : "No tiene pendientes asignados a su puesto en este momento."}
           </p>
         </div>
       ) : (

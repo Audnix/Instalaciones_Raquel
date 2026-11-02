@@ -31,6 +31,8 @@ export const PAYROLL_RUNS_SQL = `    SELECT
         (ISNULL(r.Net, 0) - (SELECT ISNULL(SUM(p.Amount),0) FROM dbo.PayrollPayments p WHERE p.PayrollRunId=r.PayrollRunId AND p.Status=N'confirmado')) AS pendingPayment,
         r.PendingDiscrepancyTotal AS pendingDiscrepancyTotal,
         r.Actor AS preparedByName,
+        r.PreparedByAppUserId AS preparedById,
+        r.CalculatedByAppUserId AS calculatedById,
         r.PreparedAt AS preparedAt,
         r.CalculatedAt AS calculatedAt,
         r.ReviewedAt AS reviewedAt,

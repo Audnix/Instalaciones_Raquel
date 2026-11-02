@@ -13,11 +13,12 @@ export const structureOrder = [
  '32_conservar_enlaces_snapshot.sql','33_eventos_novedades_nomina.sql','34_preservar_proveedores_guardado_global.sql'
 ];
 const otherScripts = {
- '21_mejoras_directorio_proveedores.sql':'datos_opcionales', '00_reconstruir_desde_cero.sql':'destructivo', '08_semilla.sql':'datos_opcionales', '09_login_aplicacion.sql':'acceso_separado',
+ '00_reconstruir_desde_cero.sql':'destructivo', '08_semilla.sql':'datos_opcionales', '09_login_aplicacion.sql':'acceso_separado',
  '10_verificar.sql':'verificacion', '18_verificar_usuarios.sql':'verificacion', '19_carga_integral_datos_reales.sql':'datos_opcionales',
  '20_verificar_integracion_total.sql':'verificacion','22_verificar_modulo_proveedores.sql':'verificacion',
  '23_verificar_talento_humano_y_nomina.sql':'verificacion','24_cargar_registros_talento_humano_y_nomina.sql':'datos_opcionales',
- '27_reporte_inconsistencias.sql':'verificacion','SQLQuery3Verificar.sql':'verificacion'
+ '27_reporte_inconsistencias.sql':'verificacion','SQLQuery3Verificar.sql':'verificacion','SQLQuery4Verificar pago.sql':'verificacion',
+ 'SQLQuerychap1.sql':'verificacion','SQLQuerychap2.sql':'copia_prueba','SQLQuerychap3.sql':'copia_prueba'
 };
 export function databaseScriptCatalog() {
  const known=[...structureOrder,...Object.keys(otherScripts)];

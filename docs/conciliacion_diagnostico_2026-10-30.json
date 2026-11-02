@@ -1,0 +1,48 @@
+{
+  "readOnly": true,
+  "checkedAt": "2026-10-31T03:51:20.074Z",
+  "payroll": [
+    {
+      "id": "PL-2026-10-Q1",
+      "period": "2026-10-Q1 (1 al 15 Octubre)",
+      "status": "pago_registrado",
+      "recordedIsZero": 0,
+      "confirmedIsZero": 1,
+      "confirmedCount": 0,
+      "otherCount": 0,
+      "missingCashCount": 0
+    },
+    {
+      "id": "pr-2026-10-1",
+      "period": "2026-10-1Q",
+      "status": "cerrada",
+      "recordedIsZero": 0,
+      "confirmedIsZero": 1,
+      "confirmedCount": 0,
+      "otherCount": 0,
+      "missingCashCount": 0
+    },
+    {
+      "id": "run-test-mvfbrouy",
+      "period": "2026-T-fbrp3k",
+      "status": "cerrada",
+      "recordedIsZero": 0,
+      "confirmedIsZero": 1,
+      "confirmedCount": 0,
+      "otherCount": 0,
+      "missingCashCount": 0
+    }
+  ],
+  "cashSessions": [
+    {
+      "account": "banco",
+      "sessionDate": "2026-10-27",
+      "confirmedMovements": 2
+    }
+  ],
+  "lastBackup": {
+    "finishedAt": "2026-10-25T20:32:07",
+    "backupType": "D",
+    "copyOnly": true
+  }
+}

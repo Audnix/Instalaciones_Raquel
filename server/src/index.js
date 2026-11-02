@@ -36,6 +36,8 @@ const [
   import("./routes/database.js")
 ]);
 
+const { moduleStateRouter } = await import('./routes/moduleState.js');
+
 const app = express();
 const port = Number(process.env.PORT) || 4000;
 
@@ -88,6 +90,7 @@ app.use("/api/hr", hrRouter);
 app.use("/api/payroll", payrollRouter);
 app.use("/api/cash", cashRouter);
 app.use("/api/state", stateRouter);
+app.use("/api/module-state", moduleStateRouter);
 app.use("/api/database", databaseRouter);
 
 app.use(errorHandler);

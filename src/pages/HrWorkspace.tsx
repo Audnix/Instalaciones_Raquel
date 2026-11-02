@@ -1,3 +1,4 @@
+import { useSessionView } from "../lib/useSessionView";
 import { getApiBaseUrl } from '../lib/apiBase';
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
@@ -297,9 +298,9 @@ export function HrWorkspace() {
   const [correctiveActions, setCorrectiveActions] = useState<CorrectiveAction[]>([]);
 
   // Filtros de Personal
-  const [searchEmployee, setSearchEmployee] = useState("");
-  const [filterArea, setFilterArea] = useState("todas");
-  const [filterStatus, setFilterStatus] = useState("todos");
+  const [searchEmployee, setSearchEmployee] = useSessionView("searchEmployee", "");
+  const [filterArea, setFilterArea] = useSessionView("filterArea", "todas");
+  const [filterStatus, setFilterStatus] = useSessionView("filterStatus", "todos");
 
   // Detalle de Expediente Modal / Pestañas
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null);

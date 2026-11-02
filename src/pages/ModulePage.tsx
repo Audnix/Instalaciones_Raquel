@@ -9,10 +9,12 @@ import { ModuleWorkspace } from "./ModuleWorkspace";
 import UsersPage from "./UsersPage";
 import type { ModuleId } from "../types/erp";
 import { GlobalOperationControl } from '../components/GlobalOperationControl';
+import { ErpProvider, isModuleScope, type ModuleScope } from '../store/erpStore';
+import { AreaOperationControl } from '../components/AreaOperationControl';
 
 export default function ModulePage() {
   const { moduleId } = useParams();
-  const { canAccess } = useAuth();
+  const { canAccess, user } = useAuth();
   const module = useMemo(() => modules.find((item) => item.id === moduleId) ?? modules[0], [moduleId]);
 
   if (!canAccess(module.id)) {
@@ -30,8 +32,18 @@ export default function ModulePage() {
   if (module.id === "usuarios") return <UsersPage />;
   if (module.id === "metodologia") return <MethodologyPage />;
   if (module.id === "ers") return <RequirementsPage />;
-  if (module.id === "datos") return <DataHubPage />;
+  if (module.id === "datos") {
+    if (user?.hierarchy === "superadmin") return <DataHubPage />;
+    return <ErpProvider key={`${user?.id}-datos`} scope="datos">
+      <AreaOperationControl moduleId="datos"><DataHubPage productsOnly /></AreaOperationControl>
+    </ErpProvider>;
+  }
   const workspace = <ModuleWorkspace key={module.id} moduleId={module.id as ModuleId} />;
+  if (isModuleScope(module.id) && user?.hierarchy !== "superadmin") {
+    return <ErpProvider key={`${user?.id}-${module.id}`} scope={module.id as ModuleScope}>
+      <AreaOperationControl moduleId={module.id as ModuleScope}>{workspace}</AreaOperationControl>
+    </ErpProvider>;
+  }
   return ['rrhh','nomina','caja','bancos','proveedores'].includes(module.id)
     ? workspace : <GlobalOperationControl>{workspace}</GlobalOperationControl>;
 }

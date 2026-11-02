@@ -9,10 +9,10 @@ import { IVA_RATE, monthKey, monthLabel } from "../lib/dgiNi";
 import { getPublicOrigin } from "../lib/publicOrigin";
 import { useErp } from "../store/erpStore";
 
-export function AlbumStudio() {
+export function AlbumStudio({ readOnly = false }: { readOnly?: boolean }) {
   const { db, publishAlbum } = useErp();
   const { user, can } = useAuth();
-  const write = can("mercadotecnia", "write");
+  const write = !readOnly && can("mercadotecnia", "write");
   const [month, setMonth] = useState(monthKey());
   const [title, setTitle] = useState("Vitrina del mes");
   const [blurb, setBlurb] = useState("Productos en venta este mes. Tocá el enlace y recorré el álbum.");

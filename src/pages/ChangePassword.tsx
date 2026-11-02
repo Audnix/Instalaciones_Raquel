@@ -4,6 +4,7 @@ import { Button } from "../components/Button";
 
 export function ChangePassword() {
   const { user, changePassword, logout } = useAuth();
+  const [currentPassword, setCurrentPassword] = useState("");
   const [password, setPassword] = useState("");
   const [confirmation, setConfirmation] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -22,7 +23,7 @@ export function ChangePassword() {
     setSaving(true);
     setError(null);
     try {
-      await changePassword(undefined, password);
+      await changePassword(currentPassword, password);
     } catch (failure) {
       setError(failure instanceof Error ? failure.message : "No se pudo actualizar la contraseña.");
     } finally {
@@ -39,6 +40,9 @@ export function ChangePassword() {
             {user?.name}, la contraseña temporal debe cambiarse antes de continuar.
           </p>
         </div>
+        <label className="block text-sm font-semibold">Contraseña actual o temporal
+          <input className="mt-2 h-12 w-full rounded-lg border border-slate-200 bg-transparent px-3 dark:border-white/10" type="password" autoComplete="current-password" required value={currentPassword} onChange={event => setCurrentPassword(event.target.value)} />
+        </label>
         <label className="block text-sm font-semibold">
           Nueva contraseña
           <input

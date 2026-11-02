@@ -85,11 +85,14 @@ const allModules: ModuleId[] = [
 ];
 
 export function modulesForUser(user: SessionUser | null): ModuleId[] {
-  if (!user) return [];
+  if (!user || !user.active || user.mustChangePassword) return [];
   if (user.hierarchy === "superadmin") return allModules;
   const set = new Set<ModuleId>();
-  user.areas.forEach((area) => areaMeta[area].modules.forEach((id) => set.add(id)));
+  user.areas.forEach((area) => areaMeta[area]?.modules.forEach((id) => set.add(id)));
+  set.delete("nomina");
+  if (user.hierarchy === "administrador" && user.areas.some(area => ["rrhh", "finanzas", "contabilidad"].includes(area))) set.add("nomina");
   if (user.hierarchy === "administrador") {
+    set.add("datos");
     set.add("reportes");
     set.add("auditoria");
     set.add("usuarios");
@@ -109,6 +112,8 @@ export function can(user: SessionUser | null, moduleId: ModuleId, action: Action
   if (user.hierarchy === "superadmin") return true;
   if (action === "admin") return user.hierarchy === "administrador" && (moduleId === "usuarios" || moduleId === "datos");
   if (user.hierarchy === "invitado") return action === "read";
+  if (moduleId === "datos" && action === "write") return user.hierarchy === "administrador" || (user.hierarchy === "estandar" && user.areas.includes("inventario"));
+  if (action === "approve" && moduleId === "nomina") return user.hierarchy === "administrador" && user.areas.some(area => ["finanzas", "contabilidad"].includes(area));
   if (action === "approve") return user.hierarchy === "administrador";
   if (action === "write") return user.hierarchy === "administrador" || user.hierarchy === "estandar";
   return true;

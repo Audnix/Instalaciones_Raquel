@@ -1,0 +1,56 @@
+{
+  "readOnly": true,
+  "checkedAt": "2026-10-31T03:58:56.994Z",
+  "payroll": [
+    {
+      "id": "PL-2026-10-Q1",
+      "period": "2026-10-Q1 (1 al 15 Octubre)",
+      "status": "pago_registrado",
+      "historyEvents": 0,
+      "paymentHistoryEvents": 0,
+      "confirmedCashMoves": 0,
+      "recordedMatchesLinkedCash": 0,
+      "paidItems": 14
+    },
+    {
+      "id": "pr-2026-10-1",
+      "period": "2026-10-1Q",
+      "status": "cerrada",
+      "historyEvents": 0,
+      "paymentHistoryEvents": 0,
+      "confirmedCashMoves": 1,
+      "recordedMatchesLinkedCash": 1,
+      "paidItems": 14
+    },
+    {
+      "id": "run-test-mvfbrouy",
+      "period": "2026-T-fbrp3k",
+      "status": "cerrada",
+      "historyEvents": 7,
+      "paymentHistoryEvents": 2,
+      "confirmedCashMoves": 0,
+      "recordedMatchesLinkedCash": 0,
+      "paidItems": 22
+    }
+  ],
+  "bankMovementSummary": [
+    {
+      "account": "banco",
+      "sessionDate": "2026-10-27",
+      "moveType": "entrada",
+      "movements": 1,
+      "payrollLinked": 0,
+      "saleLinked": 0,
+      "purchaseLinked": 0
+    },
+    {
+      "account": "banco",
+      "sessionDate": "2026-10-27",
+      "moveType": "salida",
+      "movements": 1,
+      "payrollLinked": 1,
+      "saleLinked": 0,
+      "purchaseLinked": 0
+    }
+  ]
+}

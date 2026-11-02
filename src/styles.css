@@ -139,3 +139,10 @@ textarea:focus-visible {
     size: auto;
   }
 }
+
+/* Linked records stay below the sticky header. */
+[id^="production-"], [id^="product-"], [id^="proforma-"], [id^="purchase-"] { scroll-margin-top: 6rem; }
+[id^="production-"]:target, [id^="product-"]:target, [id^="proforma-"]:target, [id^="purchase-"]:target { outline: 3px solid #0891b2; outline-offset: 3px; }
+
+[id^="sale-"], [id^="party-"] { scroll-margin-top: 6rem; }
+[id^="sale-"]:target, [id^="party-"]:target { outline: 3px solid #0891b2; outline-offset: 3px; }

@@ -1,0 +1,59 @@
+{
+  "database": "Instalaciones_Raquel_Prueba_20261030",
+  "checkedAt": "2026-10-31T04:50:52.655Z",
+  "productionDatabaseModified": false,
+  "tests": [
+    {
+      "name": "guardado y venta",
+      "status": "passed",
+      "checks": [
+        "guardado completo tras aplicar parche 34 en SSMS",
+        "factura, stock, kardex y asiento coherentes",
+        "venta no crea un cobro ficticio"
+      ],
+      "rollbackConfirmed": true
+    },
+    {
+      "name": "recorrido banco",
+      "status": "passed",
+      "checks": [
+        "apertura idempotente",
+        "entrada y salida",
+        "saldo correcto",
+        "rechazo de clave repetida con otros datos",
+        "rechazo de sobregiro",
+        "cierre y arqueo",
+        "sesión cerrada bloquea movimientos",
+        "reapertura conserva saldo"
+      ],
+      "rollbackConfirmed": true
+    },
+    {
+      "name": "sesión antigua de caja",
+      "status": "passed",
+      "checks": [
+        "rechaza movimiento con instrucción de arqueo y cierre",
+        "ningún movimiento creado"
+      ],
+      "rollbackConfirmed": true
+    },
+    {
+      "name": "recorrido comercial ampliado",
+      "status": "passed",
+      "checks": [
+        "recepción de compra con lotes y asiento",
+        "conversión cotización a factura",
+        "reconversión rechazada por validador",
+        "orden manual hasta entrega",
+        "cobro vinculado a factura y saldo actualizado",
+        "reintento idempotente",
+        "sobrecobro y referencia inexistente rechazados",
+        "anulación repone el pendiente",
+        "abono parcial descuenta solo lo confirmado",
+        "fecha predeterminada coincide con día operativo local",
+        "orden preparada con la proyección de datos de factura, sin importes"
+      ],
+      "rollbackConfirmed": true
+    }
+  ]
+}

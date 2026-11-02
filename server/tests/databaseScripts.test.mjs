@@ -8,6 +8,11 @@ test('todos los scripts fuente están catalogados y no se omiten archivos inexis
  const actual=fs.readdirSync(sqlScriptsDirectory).filter(name=>name.endsWith('.sql')&&name!=='paquete_estructura_actual.sql');
  assert.deepEqual(new Set(catalog.map(file=>file.name)),new Set(actual));
  assert.equal(catalog.some(file=>file.name==='18_invitaciones_y_gobierno.sql'),false);
+ assert.equal(catalog.some(file=>file.name==='21_mejoras_directorio_proveedores.sql'),false);
+ assert.equal(catalog.find(file=>file.name==='SQLQuery4Verificar pago.sql')?.category,'verificacion');
+ assert.equal(catalog.find(file=>file.name==='SQLQuerychap1.sql')?.category,'verificacion');
+ assert.equal(catalog.find(file=>file.name==='SQLQuerychap2.sql')?.category,'copia_prueba');
+ assert.equal(catalog.find(file=>file.name==='SQLQuerychap3.sql')?.category,'copia_prueba');
 });
 test('estructura respeta dependencias y termina con las protecciones vigentes',()=>{
  const position=name=>structureOrder.indexOf(name);

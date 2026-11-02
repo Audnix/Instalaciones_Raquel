@@ -68,7 +68,6 @@ En esta revisión se detectó PayrollNoveltyEvents faltante en la instancia exis
 
 | Archivo | Clasificación |
 |---|---|
-| 21_mejoras_directorio_proveedores.sql | datos_opcionales |
 | 00_reconstruir_desde_cero.sql | destructivo |
 | 08_semilla.sql | datos_opcionales |
 | 09_login_aplicacion.sql | acceso_separado |
@@ -81,8 +80,9 @@ En esta revisión se detectó PayrollNoveltyEvents faltante en la instancia exis
 | 24_cargar_registros_talento_humano_y_nomina.sql | datos_opcionales |
 | 27_reporte_inconsistencias.sql | verificacion |
 | SQLQuery3Verificar.sql | verificacion |
+| SQLQuery4Verificar pago.sql | verificacion |
 
-Los archivos 19_carga_integral_datos_reales.sql y 24_cargar_registros_talento_humano_y_nomina.sql contienen registros operativos; sus nombres no constituyen prueba de autenticidad ni autorización para cargarlos. 21_mejoras_directorio_proveedores.sql mezcla una lectura y datos de demostración de proveedores, por eso se excluye de estructura y queda protegido por activación explícita. Su campo legalName pertenece al documento JSON, no a una columna inexistente de Parties.
+Los archivos 19_carga_integral_datos_reales.sql y 24_cargar_registros_talento_humano_y_nomina.sql contienen registros operativos; sus nombres no constituyen prueba de autenticidad ni autorización para cargarlos. El antiguo 21_mejoras_directorio_proveedores.sql no se distribuye en este repositorio y no forma parte del catálogo ni del paquete; no se recrea su carga opcional de demostración.
 
 Los scripts de verificación son diagnósticos; no instalan la estructura ni se consideran una certificación integral. No se omiten archivos faltantes silenciosamente.
 

@@ -1,3 +1,5 @@
+import { useSessionView } from "../lib/useSessionView";
+import { payrollApprovalBlock } from "../lib/payrollApproval";
 import { getApiBaseUrl } from '../lib/apiBase';
 import { PayrollStaffRegistration } from "../components/PayrollStaffRegistration";
 import { PayrollPaymentHistory, type PayrollPaidAllocation } from "../components/PayrollPaymentHistory";
@@ -106,6 +108,8 @@ export type PayrollRun = {
   pendingPayment?: number;
   pendingDiscrepancyTotal: number;
   preparedByName?: string;
+  preparedById?: string | null;
+  calculatedById?: string | null;
   preparedAt?: string;
   calculatedAt?: string;
   reviewedAt?: string;
@@ -273,11 +277,13 @@ export function PayrollWorkspace() {
   const { user } = useAuth();
   const [searchParams] = useSearchParams();
   const requestedEmployeeId = searchParams.get("employeeId") ?? "";
+  const requestedRunId = searchParams.get("runId") ?? "";
   const [activeTab, setActiveTab] = useState<PayrollTab>("pagos");
 
   // Planillas disponibles y seleccionada
   const [runs, setRuns] = useState<PayrollRun[]>([]);
-  const [selectedRunId, setSelectedRunId] = useState<string>("");
+  const [selectedRunId, setSelectedRunId] = useState<string>(requestedRunId);
+  useEffect(() => { if (requestedRunId) setSelectedRunId(requestedRunId); }, [requestedRunId]);
   const [runDetails, setRunDetails] = useState<PayrollRun | null>(null);
   const [validations, setValidations] = useState<PayrollValidation[]>([]);
   const [items, setItems] = useState<PayrollItem[]>([]);
@@ -309,6 +315,7 @@ export function PayrollWorkspace() {
   });
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentWorkerSearch, setPaymentWorkerSearch] = useState("");
+  const [paymentWorkerFilter, setPaymentWorkerFilter] = useState("todos");
   const individualPaymentRef = useRef<HTMLElement>(null);
   const differencesPanelRef = useRef<HTMLDivElement>(null);
   const [confirmedPaymentNotice, setConfirmedPaymentNotice] = useState<{ runId: string; id: string } | null>(null);
@@ -342,6 +349,13 @@ export function PayrollWorkspace() {
   const paymentKeyRef = useRef<string>(newPaymentKey());
 
   useEffect(() => { setPaymentCheck(null); }, [paymentDraft, selectedRunId]);
+  useEffect(() => {
+    setPaymentDraft(prev => ({ ...prev, employeeId: "", amount: "", paymentReference: "", notes: "" }));
+    setPaymentWorkerSearch("");
+    setPaymentWorkerFilter("todos");
+    setShowPaymentModal(false);
+    setModalError(null);
+  }, [selectedRunId]);
 
   // Formulario nuevo borrador
   const [newDraft, setNewDraft] = useState({
@@ -370,8 +384,8 @@ export function PayrollWorkspace() {
   const [rollbackTarget, setRollbackTarget] = useState<"borrador" | "calculada">("borrador");
 
   // Filtros de trabajadores
-  const [searchWorker, setSearchWorker] = useState("");
-  const [filterArea, setFilterArea] = useState("todas");
+  const [searchWorker, setSearchWorker] = useSessionView("searchWorker", "");
+  const [filterArea, setFilterArea] = useSessionView("filterArea", "todas");
 
   // ---------------------------------------------------------------------------
   // CARGA DE LISTA DE PLANILLAS
@@ -514,8 +528,15 @@ export function PayrollWorkspace() {
     }
   };
 
+  const approvalBlockReason = payrollApprovalBlock(runDetails, user);
+
   const handleTransition = async (targetStatus: PayrollStatus, notes?: string) => {
     if (!runDetails) return;
+    if (targetStatus === "aprobada" && approvalBlockReason) {
+      setFeedback({ type: "info", message: approvalBlockReason });
+      setActiveTab("aprobaciones");
+      return;
+    }
     if (["conciliada", "cerrada"].includes(targetStatus) && paymentReconciliationPending) {
       setFeedback({ type: "error", message: "No se puede cerrar ni conciliar: faltan pagos confirmados o hay diferencias con el acumulado histórico. Revisa los comprobantes en Pagos por trabajador." });
       setActiveTab("pagos");
@@ -919,11 +940,15 @@ export function PayrollWorkspace() {
 
   const paymentReconciliationPending = !paymentsReady || Math.abs(Number(runDetails?.netTotal ?? 0) - payments.reduce((total, payment) => total + Number(payment.amount), 0)) > 0.009
     || runDetails?.paymentTotalsConsistent === false || runDetails?.paymentTotalsConsistent === 0;
+  const canRecordPayrollPayment = user?.hierarchy === "superadmin" || (user?.hierarchy === "administrador" && user.areas.some(area => ["finanzas", "contabilidad"].includes(area)));
   const paymentBlockReason = !runDetails ? "Selecciona una planilla."
     : ["conciliada", "cerrada"].includes(runDetails.status)
       ? `Esta planilla está ${STATUS_LABELS[runDetails.status].label.toLowerCase()} y no admite nuevos pagos.${pendingPayment > 0 ? " El saldo pendiente requiere revisión documental." : ""}`
       : !["aprobada", "pago_registrado"].includes(runDetails.status)
-        ? "Primero calcula, revisa y aprueba esta planilla."
+        ? runDetails.status === "revisada" ? "La planilla está revisada. Falta la aprobación de una persona autorizada para habilitar los pagos."
+          : runDetails.status === "calculada" ? "El cálculo está listo. Completa la revisión y la aprobación antes de pagar."
+          : "Primero incluye los trabajadores, calcula, revisa y aprueba esta planilla."
+        : !canRecordPayrollPayment ? "Tu cuenta puede preparar nómina, pero registrar pagos requiere un administrador de Finanzas o Contabilidad, o un superadministrador."
         : calculationPending ? "Se requiere un cálculo confirmado y vigente."
           : !paymentsReady ? "Falta confirmar el historial de pagos. Actualiza la planilla."
             : runDetails.paymentTotalsConsistent === false || runDetails.paymentTotalsConsistent === 0 ? "El acumulado histórico no coincide con los recibos confirmados. Requiere revisión documental."
@@ -940,15 +965,35 @@ export function PayrollWorkspace() {
     if (paymentGuide.action === "actualizar") { void loadRunDetail(selectedRunId); return; }
     if (paymentGuide.action === "diferencias") { differencesPanelRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }); return; }
     if (paymentGuide.action === "revisar") { setActiveTab("validaciones"); return; }
+    if (paymentGuide.action === "aprobaciones" && runDetails?.status === "revisada") {
+      if (approvalBlockReason) { setActiveTab("aprobaciones"); return; }
+      void handleTransition("aprobada"); return;
+    }
     if (paymentGuide.action === "abono") {
-      setModalError(null); setPaymentDraft({ amount: "", employeeId: "", paymentMethod: "transferencia_bancaria",
-        paymentReference: "", paymentDate: new Date().toISOString().slice(0, 10), notes: "" });
-      setShowPaymentModal(true); return;
+      setActiveTab("pagos");
+      setModalError(null);
+      individualPaymentRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      return;
     }
     setActiveTab(paymentGuide.action as PayrollTab);
   };
 
+  const selectPaymentWorker = (employeeId: string) => {
+    setModalError(null);
+    const item = items.find(worker => worker.employeeId === employeeId);
+    const pending = item && paymentsReady && !calculationPending ? pendingForEmployee(Number(item.netPay ?? 0), payments, employeeId) : 0;
+    setPaymentDraft(prev => ({ ...prev, employeeId, amount: pending > 0.009 ? pending.toFixed(2) : "", paymentReference: "", notes: "" }));
+  };
+  const filteredPaymentWorkers = items.filter(item => {
+    const matches = (item.employeeName + " " + item.position).toLocaleLowerCase().includes(paymentWorkerSearch.trim().toLocaleLowerCase());
+    if (!matches || paymentWorkerFilter === "todos") return matches;
+    if (!paymentsReady || calculationPending) return false;
+    const pending = pendingForEmployee(Number(item.netPay ?? 0), payments, item.employeeId);
+    return paymentWorkerFilter === "pagados" ? pending <= 0.009 : paymentWorkerFilter === "parciales" ? pending > 0.009 && paidToEmployee(payments, item.employeeId) > 0 : pending > 0.009;
+  });
   const selectedPaymentWorker = items.find(item => item.employeeId === paymentDraft.employeeId);
+  const selectedWorkerPending = selectedPaymentWorker && paymentsReady && !calculationPending ? pendingForEmployee(Number(selectedPaymentWorker.netPay ?? 0), payments, selectedPaymentWorker.employeeId) : null;
+  const paymentEntryBlocked = Boolean(paymentBlockReason) || selectedWorkerPending === null || selectedWorkerPending <= 0.009;
   const renderIndividualPaymentForm = () => (
             <form onSubmit={handleRegisterPayment} className="mt-4 space-y-4 text-xs">
               <fieldset disabled={busy} className="contents">
@@ -957,24 +1002,14 @@ export function PayrollWorkspace() {
                   required
                   value={paymentDraft.employeeId}
                   onChange={(e) => {
-                    const employeeId = e.target.value;
-                    const itemEmployee = employeeId ? items.find((item) => item.employeeId === employeeId) : null;
-                    const nextPending = employeeId
-                      ? pendingForEmployee(Number(itemEmployee?.netPay ?? 0), payments, employeeId)
-                      : Math.max(0, Number(runDetails?.netTotal ?? 0) - Number(runDetails?.confirmedPaymentsTotal ?? 0));
-                    setModalError(null);
-                    setPaymentDraft((prev) => ({
-                      ...prev,
-                      employeeId,
-                      amount: ""
-                    }));
+                    selectPaymentWorker(e.target.value);
                   }}
                   className={inputClass}
                 >
                   <option value="">Selecciona un trabajador</option>
                   {items.map((item) => (
-                    <option key={item.id} value={item.employeeId} disabled={pendingForEmployee(Number(item.netPay ?? 0), payments, item.employeeId) <= 0}>
-                      {item.employeeName} — pendiente C$ {pendingForEmployee(Number(item.netPay ?? 0), payments, item.employeeId).toFixed(2)}
+                    <option key={item.id} value={item.employeeId} disabled={paymentsReady && !calculationPending && pendingForEmployee(Number(item.netPay ?? 0), payments, item.employeeId) <= 0.009}>
+                      {item.employeeName} — {calculationPending || !paymentsReady ? "Saldo por verificar" : `pendiente C$ ${pendingForEmployee(Number(item.netPay ?? 0), payments, item.employeeId).toFixed(2)}`}
                     </option>
                   ))}
                 </select>
@@ -1023,8 +1058,13 @@ export function PayrollWorkspace() {
                   </div>
                 </> : <p className="mt-2 text-xs text-slate-500">Selecciona un trabajador para consultar su salario, deducciones, neto y pendiente.</p>}
               </div>
+              {selectedWorkerPending !== null && <div className="rounded-xl border border-sky-200 p-3"><p className="font-semibold">Saldo pendiente de {selectedPaymentWorker?.employeeName}</p><p className="mt-1 text-xl font-extrabold"><Money value={selectedWorkerPending} /></p>{selectedWorkerPending <= 0.009 && <p role="status" className="mt-2 text-emerald-700">Este trabajador ya tiene su neto cubierto. Selecciona otra persona para continuar.</p>}</div>}
+              <fieldset disabled={paymentEntryBlocked} className="space-y-4">
+              <legend className="font-bold">2. Define el pago de esta persona</legend>
+              <Button type="button" variant="secondary" onClick={() => setPaymentDraft(prev => ({ ...prev, amount: selectedWorkerPending?.toFixed(2) ?? "" }))}>Completar saldo pendiente</Button>
+              <p className="text-[11px] text-slate-500">Para un abono parcial, escribe un importe menor. Solo se descontará del saldo de esta persona.</p>
               <div className="grid gap-3 sm:grid-cols-2">
-                <Field label="Importe del abono (C$)">
+                <Field label="Importe a pagar ahora (C$)">
                   <input
                     type="number"
                     step="0.01"
@@ -1074,7 +1114,7 @@ export function PayrollWorkspace() {
                 </Field>
               </div>
 
-              {paymentDraft.employeeId && (
+              {selectedWorkerPending !== null && (
                 <p className="rounded-lg bg-amber-50 p-3 text-xs text-amber-900 dark:bg-amber-950/30 dark:text-amber-200">
                   Pendiente después de este abono: <Money value={Math.max(0,
                     pendingForEmployee(Number(items.find((item) => item.employeeId === paymentDraft.employeeId)?.netPay ?? 0), payments, paymentDraft.employeeId)
@@ -1101,14 +1141,15 @@ export function PayrollWorkspace() {
                 </div>
               )}
               <div className="flex justify-end gap-2 pt-3 border-t dark:border-white/10">
-                <Button type="button" variant="secondary" onClick={() => void handleCheckPayment()} disabled={busy || !paymentDraft.employeeId || !paymentDraft.amount || !paymentDraft.paymentReference}>Validar requisitos</Button>
+                <Button type="button" variant="secondary" onClick={() => void handleCheckPayment()} disabled={busy || paymentEntryBlocked || !paymentDraft.employeeId || !paymentDraft.amount || !paymentDraft.paymentReference}>Validar requisitos</Button>
                 {showPaymentModal && (<Button type="button" variant="secondary" onClick={() => setShowPaymentModal(false)}>
                   Cerrar ventana
                 </Button>)}
                 <Button type="submit" variant="primary" disabled={busy || Boolean(paymentBlockReason) || !paymentsReady || !paymentDraft.employeeId || !paymentDraft.amount || !paymentDraft.paymentReference}>
-                  {busy ? "Confirmando…" : "Registrar pago de nómina"}
+                  {busy ? "Confirmando…" : "Confirmar pago individual"}
                 </Button>
               </div>
+              </fieldset>
             </fieldset>
             </form>
   );
@@ -1255,7 +1296,8 @@ export function PayrollWorkspace() {
                   <Button
                     type="button"
                     variant="primary"
-                    disabled={busy}
+                    disabled={busy || Boolean(approvalBlockReason)}
+                    title={approvalBlockReason ?? "Aprobar el cálculo revisado"}
                     onClick={() => handleTransition("aprobada")}
                     className="flex items-center gap-1.5 text-xs bg-indigo-600 hover:bg-indigo-700"
                   >
@@ -2069,6 +2111,8 @@ export function PayrollWorkspace() {
               servidor con firmas de auditoría no repudiables.
             </p>
 
+            {runDetails.status === "revisada" && <div role="status" className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950 dark:bg-amber-950/30 dark:text-amber-100"><p className="font-bold">{approvalBlockReason ? "Hace falta otra cuenta autorizada" : "Planilla lista para aprobación"}</p><p className="mt-2">{approvalBlockReason ?? "Revisa los importes antes de aprobar. Después podrás registrar pagos por trabajador."}</p><p className="mt-2">Período que debe abrir el aprobador: <strong>{runDetails.period}</strong>. Preparado por: <strong>{runDetails.preparedByName || "Responsable registrado"}</strong>.</p><Button className="mt-3" disabled={busy || Boolean(approvalBlockReason)} onClick={() => void handleTransition("aprobada")}>Aprobar planilla revisada</Button><Button className="ml-2 mt-3" variant="secondary" disabled={busy} onClick={() => void loadRunDetail(selectedRunId)}>Actualizar aprobación</Button></div>}
+
             {/* Línea de tiempo de 7 Estados */}
             <div className="mt-8 grid gap-2 sm:grid-cols-7 text-center text-xs">
               {(
@@ -2128,8 +2172,8 @@ export function PayrollWorkspace() {
                 <p className="mt-0.5">
                   El colaborador que preparó o configuró la nómina (
                   <strong>{runDetails.preparedByName || "Preparador"}</strong>) no puede auto-aprobarla. La
-                  aprobación debe ser emitida por una persona con rango administrativo superior (Gerencia General o
-                  Superadministrador) para evitar conflictos de interés.
+                  aprobación debe ser emitida por otra persona con permisos de Finanzas o Contabilidad, o un
+                  superadministrador, que tampoco haya calculado esta planilla.
                 </p>
               </div>
             </div>
@@ -2148,40 +2192,22 @@ export function PayrollWorkspace() {
             </div>
           )}
 
-          <div className="grid items-start gap-4 xl:grid-cols-2">
-            <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-slate-900">
-              <div className="flex flex-wrap items-center justify-between gap-2"><div><p className="text-[10px] font-bold uppercase tracking-widest text-brand-600">Trabajadores</p><h3 className="text-lg font-extrabold">Personal de esta planilla</h3></div>
-                <Link to="/rrhh" className="text-xs font-semibold text-brand-600">Alta de personal / expedientes →</Link>
-              </div>
-              <p className="mt-2 text-xs text-slate-500">Cada persona tiene su salario y su neto. Selecciona una para preparar un pago individual.</p>
-              <PayrollStaffRegistration allowed={user?.hierarchy === "superadmin" || (user?.hierarchy === "administrador" && Boolean(user.areas?.includes("rrhh")))} onCreated={employee => {
-                setEmployeesDirectory(current => [...current.filter(item => item.id !== employee.id), employee]);
-                setAddWorkerDraft({ employeeId: employee.id, reason: "" });
-                if (runDetails.status === "borrador") setShowAddWorkerModal(true);
-              }} />
-              <input aria-label="Buscar trabajador para pagar" value={paymentWorkerSearch} onChange={event => setPaymentWorkerSearch(event.target.value)} className={inputClass + " mt-3"} placeholder="Buscar nombre o cargo…" />
-              <div className="mt-3 max-h-[520px] overflow-y-auto divide-y divide-slate-100 dark:divide-white/10">
-                {items.filter(item => (item.employeeName + " " + item.position).toLocaleLowerCase().includes(paymentWorkerSearch.toLocaleLowerCase())).map(item => <button key={item.id} type="button" disabled={busy}
-                  aria-pressed={paymentDraft.employeeId === item.employeeId}
-                  onClick={() => { setModalError(null); setPaymentDraft(prev => ({ ...prev, employeeId: item.employeeId, amount: "" })); individualPaymentRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }); }}
-                  className={`flex w-full items-center justify-between gap-3 p-3 text-left text-xs hover:bg-sky-50 dark:hover:bg-sky-950/30 ${paymentDraft.employeeId === item.employeeId ? "bg-sky-50 dark:bg-sky-950/30" : ""}`}>
-                  <span><strong className="block">{item.employeeName}</strong><span className="text-slate-500">{item.position} · {item.area}</span></span>
-                  <span className="text-right"><span className="block text-[10px] text-slate-500">Salario mensual de referencia</span><strong><Money value={item.baseSalaryMonthly} /></strong></span>
-                </button>)}
-                {items.length === 0 && <p className="p-4 text-xs text-slate-500">No hay trabajadores cargados en esta planilla.</p>}
-              </div>
-              <Button type="button" variant="secondary" className="mt-3" disabled={busy || runDetails.status !== "borrador"} onClick={() => setShowAddWorkerModal(true)}>Agregar trabajador a la planilla</Button>
-            </section>
-            <section ref={individualPaymentRef} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-slate-900">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-brand-600">Pago individual</p><h3 className="text-lg font-extrabold">Registrar pago a trabajador</h3>
-              {paymentBlockReason && <p role="status" className="mt-3 rounded-lg bg-amber-50 p-3 text-xs text-amber-900 dark:bg-amber-950/30 dark:text-amber-200">{paymentBlockReason}</p>}
-              {modalError && <p role="alert" className="mt-3 text-xs text-rose-700 dark:text-rose-300">{modalError}</p>}
-              {renderIndividualPaymentForm()}
-            </section>
-          </div>
           {paymentGuide && (
             <section aria-label="Guía para pagar a un trabajador" className="rounded-xl border border-sky-200 bg-sky-50/60 p-4 dark:border-sky-900 dark:bg-sky-950/20">
               <h3 className="font-extrabold">Guía para pagar a un trabajador</h3>
+              <details className="mt-3 rounded-lg border border-sky-200 p-3 dark:border-sky-900"><summary className="cursor-pointer text-xs font-bold">Guía completa: registrar personal y generar pagos</summary>
+                <ol className="mt-3 list-decimal space-y-2 pl-5 text-xs">
+                  <li><strong>Registrar personal:</strong> crea el expediente en Talento Humano con salario y fecha real de ingreso.</li>
+                  <li><strong>Crear planilla:</strong> selecciona frecuencia y fechas. En Trabajadores revisa quién pertenece al período; agrega o retira personas mientras esté en borrador.</li>
+                  <li><strong>Registrar novedades:</strong> incluye horas, bonos o deducciones con su respaldo antes de calcular.</li>
+                  <li><strong>Calcular y revisar:</strong> ejecuta el cálculo, resuelve bloqueos en Validaciones, revisa los netos y pulsa Marcar como Revisada.</li>
+                  <li><strong>Aprobar:</strong> otra persona autorizada, distinta de quien preparó o calculó, abre este mismo período y aprueba. No necesitas devolver la planilla a borrador para cambiar de responsable.</li>
+                  <li><strong>Preparar caja o banco:</strong> registra la sesión correspondiente al medio y fecha del pago, en córdobas y con fondos suficientes.</li>
+                  <li><strong>Pagar por separado:</strong> pulsa Pagar a este trabajador, revisa el importe propuesto o escribe un abono menor, elige medio y fecha, registra la referencia real, valida requisitos y confirma.</li>
+                  <li><strong>Comprobar y cerrar:</strong> revisa el pago confirmado y la colilla. Repite con otra persona o abono; concilia y cierra cuando los pagos estén completos y respaldados.</li>
+                </ol>
+                <p className="mt-3 text-xs">La preparación del importe y las comprobaciones son automáticas. La aprobación y la confirmación de cada pago son acciones explícitas. Registrar una transferencia aquí no envía dinero al banco.</p>
+              </details>
               <ol className="my-3 grid gap-2 text-xs sm:grid-cols-4">
                 {payrollPaymentSteps.map((step, index) => (
                   <li key={step} aria-current={index === paymentGuide.step ? "step" : undefined}
@@ -2190,79 +2216,16 @@ export function PayrollWorkspace() {
                   </li>
                 ))}
               </ol>
-              <p className="text-xs text-slate-600 dark:text-slate-300">{paymentGuide.message}</p>
+              <p className="text-xs text-slate-600 dark:text-slate-300">{runDetails.status === "revisada" && approvalBlockReason ? approvalBlockReason : paymentGuide.message}</p>
               <Button type="button" className="mt-3" disabled={busy || loading} onClick={followPaymentGuide}>
-                {busy ? "Procesando…" : paymentGuide.label}
+                {busy ? "Procesando…" : runDetails.status === "revisada" ? approvalBlockReason ? "Ver quién debe aprobar" : "Aprobar planilla revisada" : paymentGuide.label}
               </Button>
               <p className="mt-2 text-[11px] text-slate-500">Los abonos se registran uno por trabajador. Registrar una transferencia aquí no envía fondos al banco. La revisión y aprobación requieren responsables autorizados.</p>
             </section>
           )}
-          <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-slate-900">
-            <div>
-              <h3 className="font-bold text-sm">Pagos y abonos por trabajador</h3>
-              <p className="text-xs text-slate-500">
-                Cada persona conserva su neto aprobado. Registra un abono o completa su pendiente, según el importe que corresponda.
-              </p>
-            </div>
-            {calculationPending && (
-              <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-[11px] text-amber-900 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-200">
-                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-                <span>
-                  {calculationLabel}: no hay un neto aprobado que dispersar. Ejecuta el cálculo y completa el flujo
-                  Borrador → Calculada → Revisada → Aprobada antes de registrar pagos.
-                </span>
-              </div>
-            )}
-            {!calculationPending && (runDetails.status === "aprobada" || runDetails.status === "pago_registrado") && (
-              <p className="max-w-xl text-[11px] text-slate-500">
-                Selecciona una persona y escribe cuánto le pagarás ahora. Puedes hacer varios abonos sin pagar al resto de la planilla. El pendiente se reduce únicamente con pagos confirmados.
-              </p>
-            )}
-            <Button
-                type="button"
-                variant="primary"
-                disabled={busy || Boolean(paymentBlockReason) || pendingPayment <= 0}
-                title={paymentBlockReason ?? "Elegir trabajador e ingresar el importe del abono"}
-                onClick={() => {
-                  setModalError(null);
-                  setPaymentDraft({
-                    amount: "",
-                    paymentMethod: "transferencia_bancaria",
-                    paymentReference: "",
-                    paymentDate: new Date().toISOString().slice(0, 10),
-                    notes: "",
-                    employeeId: items.find((item) => item.employeeId === requestedEmployeeId)?.employeeId ?? ""
-                  });
-                  setShowPaymentModal(true);
-                }}
-                className="flex items-center gap-1.5 text-xs bg-emerald-600 hover:bg-emerald-700"
-              >
-                <Banknote className="h-4 w-4" />
-                <span>{pendingPayment <= 0 ? "Planilla pagada por completo" : "Registrar abono a trabajador"}</span>
-              </Button>
-          </div>
-
-          {paymentBlockReason && (
-            <div role="status" className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-xs text-amber-900 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
-              <strong>Pago bloqueado: </strong>{paymentBlockReason}
-              <Button type="button" variant="secondary" className="ml-3" onClick={() => {
-                const eligible = runs.find((run) => ["aprobada", "pago_registrado"].includes(run.status) && Number(run.pendingPayment ?? (run.netTotal - run.confirmedPaymentsTotal)) > 0);
-                if (eligible) setSelectedRunId(eligible.id);
-                else setFeedback({ type: "info", message: "No hay una planilla aprobada con saldo pendiente. Selecciona una planilla calculada y completa revisión y aprobación antes de pagar." });
-              }}>Buscar planilla habilitada para pagar</Button>
-            </div>
-          )}
-          {(headerInconsistent || runDetails.paymentTotalsConsistent === false || runDetails.paymentTotalsConsistent === 0) && (
-            <div ref={differencesPanelRef} role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-xs text-rose-900 dark:border-rose-900 dark:bg-rose-950/30 dark:text-rose-200">
-              <h3 className="font-extrabold">Diferencias que requieren revisión</h3>
-              {headerInconsistent && <p className="mt-2">Deducciones en cabecera: <Money value={runDetails.totalDeductions} />. Suma de los detalles: <Money value={Number(runDetails.deductionsFromItems ?? 0)} />. No se igualan automáticamente importes históricos.</p>}
-              {(runDetails.paymentTotalsConsistent === false || runDetails.paymentTotalsConsistent === 0) && <p className="mt-2">Acumulado histórico: <Money value={Number(runDetails.recordedPaymentsTotal ?? 0)} />. Recibos confirmados: <Money value={runDetails.confirmedPaymentsTotal} />. Revisa los comprobantes; la diferencia no demuestra por sí sola si el dinero se entregó.</p>}
-              <p className="mt-2">Este bloqueo es independiente de la lista de validaciones del cálculo. No se deben registrar pagos nuevos para compensarlo sin revisar su origen.</p>
-            </div>
-          )}
           <div className="grid gap-4 sm:grid-cols-3">
             <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-slate-900">
-              <span className="text-xs font-bold uppercase text-slate-400">Total a Dispersar</span>
+              <span className="text-xs font-bold uppercase text-slate-400">Neto calculado del período</span>
               <p className="mt-2 font-black text-2xl text-slate-800 dark:text-white">
                 <Money value={runDetails.netTotal} />
               </p>
@@ -2284,71 +2247,54 @@ export function PayrollWorkspace() {
             </div>
           </div>
 
-          <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-soft dark:border-white/10 dark:bg-slate-900">
-            <table className="w-full text-left text-xs">
-              <thead className="border-b bg-slate-50 text-[11px] font-bold uppercase text-slate-500 dark:bg-slate-800">
-                <tr>
-                  <th className="p-3">Colaborador</th>
-                  <th className="p-3">Método de Pago</th>
-                  <th className="p-3">Referencia / Banco</th>
-                  <th className="p-3 text-right">Neto aprobado</th>
-                  <th className="p-3 text-right">Abonos confirmados</th>
-                  <th className="p-3 text-right">Pendiente</th>
-                  <th className="p-3 text-center">Estado de Pago</th>
-                  <th className="p-3 text-right">Acciones</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-white/5">
-                {items.map((item) => (
-                  <tr key={item.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50">
-                    <td className="p-3 font-bold text-slate-800 dark:text-white">{item.employeeName}</td>
-                    <td className="p-3 capitalize text-slate-600 dark:text-slate-300">
-                      {item.paymentMethod.replace("_", " ")}
-                    </td>
-                    <td className="p-3 font-mono text-slate-500">
-                      {item.paymentReference || "Sin referencia de pago"}
-                    </td>
-                    <td className="p-3 text-right font-black text-brand-600 dark:text-brand-400">
-                      <Money value={item.netPay} />
-                    </td>
-                    <td className="p-3 text-right text-emerald-700">{paymentsReady ? <Money value={paidToEmployee(payments, item.employeeId)} /> : "Sin confirmar"}</td>
-                    <td className="p-3 text-right font-semibold text-amber-600">
-                      {paymentsReady ? <Money value={pendingForEmployee(Number(item.netPay ?? 0), payments, item.employeeId)} /> : "Sin confirmar"}
-                    </td>
-                    <td className="p-3 text-center">
-                      <StatusPill tone={paymentsReady && pendingForEmployee(Number(item.netPay ?? 0), payments, item.employeeId) <= 0 ? "ok" : "warn"}>
-                        {!paymentsReady ? "Sin confirmar" : pendingForEmployee(Number(item.netPay ?? 0), payments, item.employeeId) <= 0 ? "Pagado" : paidToEmployee(payments, item.employeeId) > 0 ? "Pago parcial" : "Pendiente"}
-                      </StatusPill>
-                    </td>
-                    <td className="p-3 text-right">
-                      <button
-                          type="button"
-                          disabled={busy || Boolean(paymentBlockReason) || pendingForEmployee(Number(item.netPay ?? 0), payments, item.employeeId) <= 0}
-                          title={paymentBlockReason ?? "Registrar un pago o abono a este trabajador"}
-                          onClick={() => {
-                            const pendingWorker = pendingForEmployee(Number(item.netPay ?? 0), payments, item.employeeId);
-                            setModalError(null);
-                            setPaymentDraft({
-                              amount: "",
-                              paymentMethod: "transferencia_bancaria",
-                              paymentReference: "",
-                              paymentDate: new Date().toISOString().slice(0, 10),
-                              notes: "",
-                              employeeId: item.employeeId
-                            });
-                            setShowPaymentModal(true);
-                          }}
-                          className="inline-flex items-center gap-1 rounded-lg disabled:cursor-not-allowed disabled:opacity-50 bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:text-emerald-300"
-                        >
-                          <Banknote className="h-3.5 w-3.5" /> Registrar abono
-                        </button>
-                      {paymentBlockReason && <span className="mt-1 block text-[10px] text-amber-700 dark:text-amber-300">{["conciliada", "cerrada"].includes(runDetails.status) ? `Planilla ${STATUS_LABELS[runDetails.status].label.toLowerCase()}` : "Ver motivo del bloqueo arriba"}</span>}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-900 dark:bg-emerald-950/20">
+            <div><h3 className="font-extrabold">Pagar a un trabajador</h3><p className="text-xs text-slate-600 dark:text-slate-300">Elige una persona. Se prepara su saldo pendiente; puedes reducirlo para hacer un abono. Los demás conservan su saldo.</p></div>
+            <Button type="button" disabled={busy || loading || items.length === 0} onClick={() => { setModalError(null); setShowPaymentModal(true); }}>Elegir trabajador y preparar pago</Button>
           </div>
+          <div className="grid items-start gap-4 xl:grid-cols-2">
+            <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-slate-900">
+              <div className="flex flex-wrap items-center justify-between gap-2"><div><p className="text-[10px] font-bold uppercase tracking-widest text-brand-600">Trabajadores</p><h3 className="text-lg font-extrabold">Personal de esta planilla</h3></div>
+                <Link to="/rrhh" className="text-xs font-semibold text-brand-600">Alta de personal / expedientes →</Link>
+              </div>
+              <p className="mt-2 text-xs text-slate-500">Cada persona tiene su salario y su neto. Selecciona una para preparar un pago individual.</p>
+              <details className="my-3 rounded-lg border p-3"><summary className="cursor-pointer text-xs font-semibold">Gestionar personal antes de calcular</summary>
+              <PayrollStaffRegistration allowed={user?.hierarchy === "superadmin" || (user?.hierarchy === "administrador" && Boolean(user.areas?.includes("rrhh")))} onCreated={employee => {
+                setEmployeesDirectory(current => [...current.filter(item => item.id !== employee.id), employee]);
+                setAddWorkerDraft({ employeeId: employee.id, reason: "" });
+                if (runDetails.status === "borrador") setShowAddWorkerModal(true);
+              }} />
+              <p className="text-xs text-slate-500">Para incluir personal nuevo, la planilla debe estar en borrador.</p></details>
+              <input aria-label="Buscar trabajador para pagar" value={paymentWorkerSearch} onChange={event => setPaymentWorkerSearch(event.target.value)} className={inputClass + " mt-3"} placeholder="Buscar nombre o cargo…" />
+              <label className="mt-3 block text-xs font-semibold">Mostrar trabajadores<select value={paymentWorkerFilter} onChange={event => setPaymentWorkerFilter(event.target.value)} className={inputClass + " mt-1"}><option value="todos">Todos</option><option value="pendientes">Con saldo pendiente</option><option value="parciales">Con abonos parciales</option><option value="pagados">Pagados</option></select></label>
+              <p className="mt-2 text-[11px] text-slate-500">{calculationPending ? "Calcula la planilla para conocer los netos del período." : !paymentsReady ? "Verificando pagos: los saldos aún no están confirmados." : "Selecciona una persona para preparar su pago."}</p>
+              <div className="mt-3 max-h-[520px] overflow-y-auto divide-y divide-slate-100 dark:divide-white/10">
+                {filteredPaymentWorkers.map(item => <button key={item.id} type="button" disabled={busy}
+                  aria-pressed={paymentDraft.employeeId === item.employeeId}
+                  onClick={() => { setModalError(null); selectPaymentWorker(item.employeeId); individualPaymentRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }); }}
+                  className={`flex w-full items-center justify-between gap-3 p-3 text-left text-xs hover:bg-sky-50 dark:hover:bg-sky-950/30 ${paymentDraft.employeeId === item.employeeId ? "bg-sky-50 dark:bg-sky-950/30" : ""}`}>
+                  <span><strong className="block">{item.employeeName}</strong><span className="text-slate-500">{item.position} · {item.area}</span><span className="mt-2 inline-flex rounded-lg bg-brand-600 px-3 py-1.5 font-bold text-white">{paymentBlockReason ? "Preparar pago / ver requisitos" : "Pagar a este trabajador"}</span></span>
+                  <span className="shrink-0 text-right"><span className="block text-[10px] text-slate-500">Neto del período</span><strong>{calculationPending ? "Sin calcular" : <Money value={item.netPay} />}</strong><span className="mt-1 block text-[10px] text-emerald-700">Pagado: {paymentsReady ? <Money value={paidToEmployee(payments, item.employeeId)} /> : "Sin verificar"}</span><span className="block font-bold text-amber-700">Pendiente: {!calculationPending && paymentsReady ? <Money value={pendingForEmployee(Number(item.netPay ?? 0), payments, item.employeeId)} /> : "Sin verificar"}</span></span>
+                </button>)}
+                {filteredPaymentWorkers.length === 0 && <p role="status" className="p-4 text-xs text-slate-500">{items.length === 0 ? "No hay trabajadores en esta planilla." : "No hay coincidencias con la búsqueda y el filtro."}</p>}
+              </div>
+              <Button type="button" variant="secondary" className="mt-3" disabled={busy || runDetails.status !== "borrador"} onClick={() => setShowAddWorkerModal(true)}>Agregar trabajador a la planilla</Button>
+            </section>
+            <section ref={individualPaymentRef} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-slate-900">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-brand-600">Pago individual</p><h3 className="text-lg font-extrabold">Pagar a trabajador / registrar abono</h3>
+              {paymentBlockReason && <p role="status" className="mt-3 rounded-lg bg-amber-50 p-3 text-xs text-amber-900 dark:bg-amber-950/30 dark:text-amber-200">{paymentBlockReason}</p>}
+              {modalError && <p role="alert" className="mt-3 text-xs text-rose-700 dark:text-rose-300">{modalError}</p>}
+              {renderIndividualPaymentForm()}
+            </section>
+          </div>
+          {(headerInconsistent || runDetails.paymentTotalsConsistent === false || runDetails.paymentTotalsConsistent === 0) && (
+            <div ref={differencesPanelRef} role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-xs text-rose-900 dark:border-rose-900 dark:bg-rose-950/30 dark:text-rose-200">
+              <h3 className="font-extrabold">Diferencias que requieren revisión</h3>
+              {headerInconsistent && <p className="mt-2">Deducciones en cabecera: <Money value={runDetails.totalDeductions} />. Suma de los detalles: <Money value={Number(runDetails.deductionsFromItems ?? 0)} />. No se igualan automáticamente importes históricos.</p>}
+              {(runDetails.paymentTotalsConsistent === false || runDetails.paymentTotalsConsistent === 0) && <p className="mt-2">Acumulado histórico: <Money value={Number(runDetails.recordedPaymentsTotal ?? 0)} />. Recibos confirmados: <Money value={runDetails.confirmedPaymentsTotal} />. Revisa los comprobantes; la diferencia no demuestra por sí sola si el dinero se entregó.</p>}
+              <p className="mt-2">Este bloqueo es independiente de la lista de validaciones del cálculo. No se deben registrar pagos nuevos para compensarlo sin revisar su origen.</p>
+            </div>
+          )}
+
 
           <PayrollPaymentHistory payments={payments} items={items} period={runDetails.period} ready={paymentsReady} />
 

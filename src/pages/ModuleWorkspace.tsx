@@ -1,6 +1,10 @@
+import { Link, useLocation } from "react-router-dom";
+import { useSessionView } from "../lib/useSessionView";
+import { ProductionSourcePanel } from "../components/ProductionSourcePanel";
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { Calculator, FileSpreadsheet, Filter, HelpCircle, Scissors, Sparkles } from "lucide-react";
 import AuditPage from "./AuditPage";
+import { CostsWorkspace } from "./CostsWorkspace";
 import { CashWorkspace } from "./CashWorkspace";
 import SupplierDirectoryPage from "./SupplierDirectoryPage";
 import { HrWorkspace } from "./HrWorkspace";
@@ -16,8 +20,7 @@ import {
   FigureExplanation,
   OrderToCashPipeline,
   PipelineDoc,
-  RemnantOptimizerModal,
-  WhatIsMissingCard
+  RemnantOptimizerModal
 } from "../components/CreativeTools";
 import { Field, inputClass, Money, PageHeader, StatusPill } from "../components/Ui";
 import { bestPromotion, productPhoto } from "../data/catalog";
@@ -50,6 +53,20 @@ function repairQr(payload: string, ticket: Omit<TicketData, "qrPayload"> & { sal
 }
 
 export function ModuleWorkspace({ moduleId }: { moduleId: ModuleId }) {
+  const { hash } = useLocation();
+  const focusedTarget = useRef<HTMLElement | null>(null);
+  const { db } = useErp();
+  useEffect(() => {
+    if (!hash) { focusedTarget.current = null; return; }
+    let id: string;
+    try { id = decodeURIComponent(hash.slice(1)); } catch { return; }
+    const target = document.getElementById(id);
+    if (target && target !== focusedTarget.current) {
+      focusedTarget.current = target;
+      target.scrollIntoView({ block: "center", behavior: "smooth" });
+      target.focus({ preventScroll: true });
+    }
+  }, [hash, db]);
   switch (moduleId) {
     case "produccion":
       return <ProductionView />;
@@ -90,9 +107,13 @@ export function ModuleWorkspace({ moduleId }: { moduleId: ModuleId }) {
 }
 
 function ProductionView() {
-  const { db, addProduction, moveProduction } = useErp();
+  const { db, addProduction, moveProduction, saving } = useErp();
   const { user, can } = useAuth();
   const write = can("produccion", "write");
+  const productionForm = useRef<HTMLFormElement>(null);
+  const submitLock = useRef(false);
+  const [formError,setFormError] = useState('');
+  useEffect(()=>{submitLock.current=false;},[db.production]);
   const [form, setForm] = useState({
     code: "",
     product: "",
@@ -105,6 +126,12 @@ function ProductionView() {
 
   const submit = (event: FormEvent) => {
     event.preventDefault();
+    if(submitLock.current||saving)return;
+    if(db.production.some(order=>order.code.trim().toLowerCase()===form.code.trim().toLowerCase())){
+      setFormError('Ya existe una orden con ese código. Revisa la orden existente o utiliza un código distinto.');
+      return;
+    }
+    setFormError('');submitLock.current=true;
     addProduction({ ...form, stage: "backlog" }, user?.name ?? "sistema");
     setForm({
       code: "",
@@ -127,22 +154,25 @@ function ProductionView() {
         subtitle="Flujo de fabricación de perfiles, corte de vidrio y ensamblaje arquitectónico (Sección 11)."
       />
 
-      {/* Qué falta para continuar (Sección 27) */}
-      <WhatIsMissingCard
-        title="Fabricación y Despacho en Taller"
-        context={`Hay ${activeOrdersCount} órdenes activas en piso. Compruebe los hitos para avanzar las piezas a la siguiente etapa:`}
-        steps={[
-          { label: "Medidas rectificadas en obra", done: true, hint: "Planos validados con el cliente" },
-          { label: "Materiales y vidrios reservados", done: db.products.some((p) => p.minQuantity > 0), hint: "Bodega de perfiles y lotes PEPS" },
-          { label: "Optimización de corte de barra 6.10m", done: true, hint: "Aprovechamiento de retazos y mermas" },
-          { label: "Control de calidad y embalaje", done: false, hint: "Prueba de escuadra y sellado hermético" }
-        ]}
-      />
+      <details className="rounded-xl border border-slate-200 bg-white p-4 text-sm dark:border-white/10 dark:bg-slate-900">
+        <summary className="cursor-pointer font-semibold">Comprobaciones de taller · {activeOrdersCount} órdenes activas</summary>
+        <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">Guía de revisión para cada orden antes de avanzar de etapa.</p>
+        <ul className="mt-2 list-disc space-y-1 pl-5 text-xs">
+          <li>Rectificar medidas y revisar los planos con el cliente.</li>
+          <li>Comprobar disponibilidad y reserva de materiales en bodega.</li>
+          <li>Revisar el plan de corte y el aprovechamiento de retazos.</li>
+          <li>Comprobar escuadra, sellado, embalaje y condiciones de entrega.</li>
+        </ul>
+      </details>
 
+      {write && <ProductionSourcePanel orders={db.production} onPrepare={draft=>{
+        setForm(previous=>({...previous,...draft}));setFormError('');
+        productionForm.current?.scrollIntoView({behavior:'smooth',block:'center'});
+      }}/>}
       {write && (
-        <form onSubmit={submit} className="grid gap-3 rounded-2xl bg-white p-4 shadow-soft dark:border-white/10 dark:bg-slate-900 md:grid-cols-6">
+        <form ref={productionForm} onSubmit={submit} className="grid gap-3 rounded-2xl bg-white p-4 shadow-soft dark:border-white/10 dark:bg-slate-900 md:grid-cols-6">
           <Field label="N° Orden (OT)">
-            <input className={inputClass} required placeholder="OT-106" value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} />
+            <input className={inputClass} required maxLength={80} placeholder="OT-106" value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} />
           </Field>
           <Field label="Trabajo / Estructura">
             <input className={inputClass} required placeholder="Ventana corrediza 2 hojas" value={form.product} onChange={(e) => setForm({ ...form, product: e.target.value })} />
@@ -151,7 +181,7 @@ function ProductionView() {
             <input className={inputClass} required placeholder="Residencial Los Robles" value={form.client} onChange={(e) => setForm({ ...form, client: e.target.value })} />
           </Field>
           <Field label="Cantidad">
-            <input className={inputClass} type="number" min={1} value={form.qty} onChange={(e) => setForm({ ...form, qty: Number(e.target.value) })} />
+            <input className={inputClass} type="number" required min={0.0001} step="0.0001" value={form.qty} onChange={(e) => setForm({ ...form, qty: Number(e.target.value) })} />
           </Field>
           <Field label="Unidad">
             <select className={inputClass} value={form.unit} onChange={(e) => setForm({ ...form, unit: e.target.value })}>
@@ -161,8 +191,9 @@ function ProductionView() {
             </select>
           </Field>
           <div className="flex items-end">
-            <Button className="w-full" type="submit">Crear Orden</Button>
+            <Button className="w-full" type="submit" disabled={saving}>Crear Orden</Button>
           </div>
+          {formError&&<p role="alert" className="text-sm text-rose-700 dark:text-rose-300 md:col-span-6">{formError}</p>}
         </form>
       )}
 
@@ -183,7 +214,7 @@ function ProductionView() {
 
               <div className="space-y-2.5">
                 {list.map((item) => (
-                  <div key={item.id} className="rounded-xl border border-slate-200 bg-slate-50/60 p-3 dark:border-white/10 dark:bg-slate-950">
+                  <div id={`production-${item.code}`} tabIndex={-1} key={item.id} className="rounded-xl border border-slate-200 bg-slate-50/60 p-3 dark:border-white/10 dark:bg-slate-950">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-bold text-brand-700 dark:text-cyan-400 font-mono">{item.code}</span>
                       <StatusPill tone={item.stage === "entregado" ? "ok" : item.stage === "corte" ? "warn" : "neutral"}>
@@ -275,8 +306,11 @@ function InventoryView() {
     reason: ""
   });
   const [error, setError] = useState<string | null>(null);
-  const [categoryFilter, setCategoryFilter] = useState<string>("todos");
-  const [showRemnants, setShowRemnants] = useState(false);
+  const [categoryFilter, setCategoryFilter] = useSessionView<string>("inventory-category", "todos");
+  const [onlyCriticalStock, setOnlyCriticalStock] = useSessionView("inventory-critical-stock", false);
+  const { hash: inventoryTarget } = useLocation();
+
+  const [showRemnants, setShowRemnants] = useSessionView("inventory-remnants", false);
 
   useEffect(() => { if (db.products.length && !db.products.some(item => item.id === form.productId)) setForm(current => ({...current, productId: db.products[0].id})); }, [db.products, form.productId]);
   const pepsPreview = form.type === "salida" ? previewPeps(form.productId, form.quantity) : [];
@@ -292,6 +326,8 @@ function InventoryView() {
   };
 
   const filteredProducts = db.products.filter((item) => {
+    if (onlyCriticalStock && stockOf(item.id) >= item.minQuantity) return false;
+    if (inventoryTarget === `#product-${encodeURIComponent(item.code)}`) return true;
     if (categoryFilter === "todos") return true;
     if (categoryFilter === "showroom") return item.category.toLowerCase().includes("electro") || item.category.toLowerCase().includes("show");
     if (categoryFilter === "perfiles") return item.category.toLowerCase().includes("perfil") || item.name.toLowerCase().includes("aluminio");
@@ -307,6 +343,7 @@ function InventoryView() {
           kicker="Gestión de Materiales"
           title="Inventario Valuado por Lotes (PEPS)"
           subtitle="Trazabilidad por lote de barras de aluminio, láminas de vidrio y herrajes (Sección 12)."
+          actions={can('datos', 'write') ? <Link to="/datos?vista=productos"><Button>Agregar producto</Button></Link> : undefined}
         />
         <Button
           variant="secondary"
@@ -374,6 +411,18 @@ function InventoryView() {
         >
           Showroom Demostrativo (Electrodomésticos)
         </button>
+      </div>
+
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <label className="flex cursor-pointer items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-200">
+          <input type="checkbox" checked={onlyCriticalStock}
+            onChange={(event) => setOnlyCriticalStock(event.target.checked)}
+            className="h-4 w-4 accent-rose-600" />
+          Solo stock crítico
+        </label>
+        <p role="status" className="text-xs text-slate-500 dark:text-slate-400">
+          {filteredProducts.length} de {db.products.length} productos
+        </p>
       </div>
 
       {categoryFilter === "showroom" && (
@@ -455,11 +504,16 @@ function InventoryView() {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 dark:divide-white/5">
+            {filteredProducts.length === 0 && (
+              <tr><td colSpan={9} className="p-6 text-center text-sm text-slate-500 dark:text-slate-400">
+                No hay productos que coincidan con los filtros seleccionados.
+              </td></tr>
+            )}
             {filteredProducts.map((item) => {
               const stock = stockOf(item.id);
               const lots = db.lots.filter((lot) => lot.productId === item.id && lot.quantity > 0);
               return (
-                <tr key={item.id} className="hover:bg-slate-50/50 dark:hover:bg-white/5">
+                <tr id={`product-${item.code}`} tabIndex={-1} key={item.id} className="hover:bg-slate-50/50 dark:hover:bg-white/5">
                   <td className="p-2.5 font-bold font-mono text-brand-700 dark:text-cyan-400">{item.code}</td>
                   <td className="p-2.5 font-semibold text-slate-900 dark:text-white">{item.name}</td>
                   <td className="p-2.5 text-slate-500">{item.category}</td>
@@ -543,7 +597,7 @@ function FinanceView() {
   return (
     <div className="space-y-5">
       <PageHeader kicker="Finanzas" title="Control financiero" subtitle="Resultado del mes, cuentas que restan y punto de equilibrio." />
-      <BooksStudio start="rumbo" />
+      {user?.hierarchy === "superadmin" ? <BooksStudio start="rumbo" /> : <p className="text-sm text-slate-500">Consulta de movimientos financieros y proyecciones del ?rea. Los estados consolidados se consultan con el perfil autorizado.</p>}
       <div className="grid gap-3 sm:grid-cols-3">
         <Kpi label="Ingresos" value={income} />
         <Kpi label="Egresos" value={expense} />
@@ -709,7 +763,7 @@ function MarketingView({ title }: { title: string }) {
   return (
     <div className="space-y-5">
       <PageHeader kicker="Mercadotecnia" title={title} subtitle="Álbum mensual con fecha y enlace, más rotación de showroom." />
-      <AlbumStudio />
+      <AlbumStudio readOnly={title === "Reportes consolidados"} />
       <section className="grid gap-3 md:grid-cols-2">
         {(db.promotions ?? []).filter((item) => item.active).map((item) => (
           <article key={item.id} className="overflow-hidden rounded-2xl bg-gradient-to-r from-brand-900 to-cyan-700 p-5 text-white shadow-soft">
@@ -1008,10 +1062,17 @@ function SalesView() {
           <h2 className="font-extrabold">Facturas</h2>
           <div className="mt-3 space-y-2">
             {db.sales.map((item) => (
-              <button key={item.id} type="button" onClick={() => openSale(item)} className="flex w-full items-center justify-between rounded-xl border border-slate-100 px-3 py-2 text-left hover:border-brand-300 dark:border-white/10">
-                <span><strong>{item.saleNumber}</strong><span className="ml-2 text-sm text-slate-500">{item.clientName}</span></span>
-                <Money value={item.total} />
-              </button>
+              <div id={`sale-${item.saleNumber}`} tabIndex={-1} key={item.id} className="rounded-xl border border-slate-100 dark:border-white/10">
+                <button type="button" onClick={() => openSale(item)} className="flex w-full items-center justify-between px-3 py-2 text-left hover:bg-slate-50 dark:hover:bg-white/5">
+                  <span><strong>{item.saleNumber}</strong><span className="ml-2 text-sm text-slate-500">{item.clientName}</span></span>
+                  <Money value={item.total} />
+                </button>
+                {item.status === 'completed' && (can('caja','write') || can('bancos','write') || can('produccion','write')) && <div className="flex flex-wrap gap-3 border-t border-slate-100 px-3 py-2 text-xs font-semibold dark:border-white/10">
+                  {can('produccion','write') && <Link className="text-brand-700 underline dark:text-cyan-300" to={`/produccion?invoice=${encodeURIComponent(item.saleNumber)}`}>Preparar orden de taller</Link>}
+                  {can('caja','write') && <Link className="text-brand-700 underline dark:text-cyan-300" to={`/caja?invoice=${encodeURIComponent(item.saleNumber)}`}>Cobrar en efectivo</Link>}
+                  {can('bancos','write') && <Link className="text-brand-700 underline dark:text-cyan-300" to={`/bancos?invoice=${encodeURIComponent(item.saleNumber)}`}>Cobrar en banco</Link>}
+                </div>}
+              </div>
             ))}
           </div>
         </article>
@@ -1019,7 +1080,7 @@ function SalesView() {
           <h2 className="font-extrabold">Proformas</h2>
           <div className="mt-3 space-y-2">
             {(db.proformas ?? []).map((item) => (
-              <div key={item.id} className="rounded-xl border border-slate-100 px-3 py-2 dark:border-white/10">
+              <div id={`proforma-${item.proformaNumber}`} tabIndex={-1} key={item.id} className="rounded-xl border border-slate-100 px-3 py-2 dark:border-white/10">
                 <div className="flex items-center justify-between gap-2">
                   <div>
                     <strong>{item.proformaNumber}</strong>
@@ -1133,7 +1194,7 @@ function PurchasesView() {
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-white/5">
               {db.purchases.map((item) => (
-                <tr key={item.id} className="hover:bg-slate-50/50 dark:hover:bg-white/5">
+                <tr id={`purchase-${item.purchaseNumber}`} tabIndex={-1} key={item.id} className="hover:bg-slate-50/50 dark:hover:bg-white/5">
                   <td className="p-2.5 font-bold font-mono text-brand-700 dark:text-cyan-400">{item.purchaseNumber}</td>
                   <td className="p-2.5 font-semibold text-slate-900 dark:text-white">{item.supplierName}</td>
                   <td className="p-2.5 text-slate-500">{new Date(item.purchaseDate).toLocaleDateString("es-NI")}</td>
@@ -1284,7 +1345,7 @@ function PartiesView({ type }: { type: "cliente" | "proveedor" }) {
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-white/5">
               {list.map((item) => (
-                <tr key={item.id} className="hover:bg-slate-50/50 dark:hover:bg-white/5">
+                <tr id={`party-${item.id}`} tabIndex={-1} key={item.id} className="hover:bg-slate-50/50 dark:hover:bg-white/5">
                   <td className="p-2.5 font-bold text-slate-900 dark:text-white">{item.name}</td>
                   <td className="p-2.5 font-semibold text-slate-700 dark:text-slate-300">{item.contact}</td>
                   <td className="p-2.5 text-slate-500">{item.phone}</td>
@@ -1514,6 +1575,8 @@ function HrView({ payroll }: { payroll: boolean }) {
 
 
 function CostsView() {
+  const { user } = useAuth();
+  if (user?.hierarchy !== "superadmin") return <CostsWorkspace />;
   return (
     <div className="space-y-5">
       <PageHeader kicker="Costos" title="Costos PEPS por línea" subtitle="Materiales, mano de obra y margen de cada familia de producto." />
@@ -1532,7 +1595,7 @@ function Kpi({ label, value }: { label: string; value: number }) {
 }
 
 function List({ rows }: { rows: { k: string; a: string; b: string; c: string; d: number }[] }) {
-  const [q, setQ] = useState("");
+  const [q, setQ] = useSessionView("list-search", "");
   const filtered = useMemo(() => rows.filter((row) => `${row.a} ${row.b} ${row.c}`.toLowerCase().includes(q.toLowerCase())), [q, rows]);
   return (
     <section className="rounded-lg bg-white p-4 shadow-soft dark:bg-slate-900">

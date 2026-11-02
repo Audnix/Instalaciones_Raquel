@@ -1,5 +1,7 @@
-import { ReactNode, useEffect, useMemo, useState } from "react";
-import { NavLink } from "react-router-dom";
+import { QuickNavigationSearch } from "../components/QuickNavigationSearch";
+import { parseTaskResponse } from "../lib/taskResponse";
+import { ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import { NavLink, useLocation } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   Bell,
@@ -9,9 +11,11 @@ import {
   Menu,
   Moon,
   PanelLeftClose,
-  Search,
   Sun
 } from "lucide-react";
+import { authenticatedFetch } from "../auth/apiSession";
+import { getApiBaseUrl } from "../lib/apiBase";
+import { useSessionView } from "../lib/useSessionView";
 import logo from "../assets/logo-window.png";
 import { useAuth } from "../auth/AuthContext";
 import { hierarchyMeta } from "../auth/roles";
@@ -43,44 +47,40 @@ export function AppShell({
   onLogout: () => void;
 }) {
   const [open, setOpen] = useState(false);
+  const { pathname } = useLocation();
+  const [closedGroups, setClosedGroups] = useSessionView<Record<string, boolean>>("menu-groups", {}, true);
   const [collapsed, setCollapsed] = useState(false);
-  const [pendingTasksCount, setPendingTasksCount] = useState<number>(0);
+  const [pendingTasksCount, setPendingTasksCount] = useState<number | null>(null);
+  const notifications = useRef<HTMLDetailsElement>(null);
   const { user, canAccess } = useAuth();
   const { db, syncStatus, saving } = useErp();
 
   useEffect(() => {
+    notifications.current?.removeAttribute("open");
+  }, [pathname, user?.id]);
+
+  useEffect(() => {
     let isMounted = true;
+    setPendingTasksCount(null);
     async function fetchTasks() {
       try {
-        const token =
-          localStorage.getItem("raquel_jwt_token") ||
-          sessionStorage.getItem("raquel_jwt_token") ||
-          localStorage.getItem("raquel_token") ||
-          sessionStorage.getItem("raquel_token");
-        const res = await fetch("/api/tasks/my-tasks", {
-          headers: token ? { Authorization: `Bearer ${token}` } : {}
-        });
+        const res = await authenticatedFetch(`${getApiBaseUrl()}/api/tasks/my-tasks`);
+        if (!res.ok) throw new Error("Tasks unavailable");
         if (res.ok) {
-          const data = await res.json();
+          const tasks = parseTaskResponse(await res.json());
           if (isMounted) {
-            setPendingTasksCount(data.tasks?.length ?? 0);
+            setPendingTasksCount(tasks.length);
           }
         }
       } catch {
-        // Fallback a cálculo local
-        if (isMounted) {
-          const count =
-            db.production.filter((p) => p.stage !== "entregado").length +
-            (db.proformas ?? []).filter((p) => p.status !== "convertida").length;
-          setPendingTasksCount(count);
-        }
+        if (isMounted) setPendingTasksCount(null);
       }
     }
     void fetchTasks();
     return () => {
       isMounted = false;
     };
-  }, [db.production, db.proformas]);
+  }, [db.production, db.proformas, pathname, user?.id]);
 
   const visible = useMemo(() => modules.filter((item) => canAccess(item.id)), [canAccess]);
 
@@ -164,7 +164,9 @@ export function AppShell({
             {!collapsed && (
               <span className="flex flex-1 items-center justify-between">
                 <span>Mis tareas</span>
-                {pendingTasksCount > 0 && (
+                {pendingTasksCount === null ? (
+                  <span title="Cantidad de pendientes sin confirmar. Abre Mis tareas para consultar." aria-label="Pendientes sin confirmar" className="text-xs text-slate-300">—</span>
+                ) : pendingTasksCount > 0 && (
                   <span className="rounded-full bg-cyan-400 px-1.5 py-0.2 text-[10px] font-black text-slate-950">
                     {pendingTasksCount}
                   </span>
@@ -178,11 +180,14 @@ export function AppShell({
         {Object.entries(grouped).map(([group, items]) => (
           <div key={group} className="pt-2">
             {!collapsed && (
-              <p className="mb-1.5 px-3 text-[10px] font-black uppercase tracking-wider text-cyan-400">
-                {group}
-              </p>
+              <button type="button"
+                className="mb-1.5 flex w-full items-center justify-between px-3 py-1 text-[10px] font-black uppercase tracking-wider text-cyan-400"
+                aria-expanded={(closedGroups[group] === undefined ? items.some(item => pathname === `/${item.id}`) : !closedGroups[group])}
+                onClick={() => setClosedGroups(previous => ({ ...previous, [group]: previous[group] === undefined ? items.some(item => pathname === `/${item.id}`) : !previous[group] }))}>
+                {group}<span aria-hidden="true">{(closedGroups[group] === undefined ? items.some(item => pathname === `/${item.id}`) : !closedGroups[group]) ? "−" : "+"}</span>
+              </button>
             )}
-            {items.map((item) => (
+            {(collapsed || (closedGroups[group] === undefined ? items.some(item => pathname === `/${item.id}`) : !closedGroups[group])) && items.map((item) => (
               <NavLink
                 key={item.id}
                 to={`/${item.id}`}
@@ -267,16 +272,7 @@ export function AppShell({
               <Menu size={20} />
             </button>
 
-            <label className="relative hidden flex-1 md:block max-w-md">
-              <Search
-                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
-                size={16}
-              />
-              <input
-                className="h-9 w-full rounded-xl border border-slate-200 bg-slate-50 pl-9 pr-4 text-xs font-medium dark:border-white/10 dark:bg-slate-950/50 focus:border-brand-500 focus:outline-none transition"
-                placeholder="Buscar clientes, OT, facturas o inventario..."
-              />
-            </label>
+            <QuickNavigationSearch />
 
             <div className="ml-auto flex items-center gap-2 sm:gap-3">
               <button
@@ -287,7 +283,7 @@ export function AppShell({
                 {dark ? <Sun size={18} /> : <Moon size={18} />}
               </button>
 
-              <span
+              {user?.hierarchy === "superadmin" && <span
                 className={`hidden items-center gap-1.5 rounded-lg px-2.5 py-1 text-[11px] font-bold sm:inline-flex ${
                   syncStatus === "connected"
                     ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200/50"
@@ -305,26 +301,31 @@ export function AppShell({
                     : syncStatus === "conflict"
                       ? "Conflicto: guardado detenido"
                       : "Datos globales sin confirmar"}
-              </span>
+              </span>}
 
-              {syncStatus === "conflict" && (
+              {user?.hierarchy === "superadmin" && syncStatus === "conflict" && (
                 <p role="alert" className="max-w-sm text-xs text-rose-700 dark:text-rose-300">
                   Otra sesión cambió los datos. Conservamos tus cambios locales; copia los datos pendientes y recarga para revisar antes de registrarlos de nuevo.
                 </p>
               )}
 
               {/* Notificaciones */}
-              <div className="group relative">
-                <button
-                  className="relative rounded-xl p-2 text-slate-500 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/10 transition"
+              <details ref={notifications} className="relative" onKeyDown={event => {
+                if (event.key === "Escape") {
+                  event.currentTarget.removeAttribute("open");
+                  event.currentTarget.querySelector("summary")?.focus();
+                }
+              }}>
+                <summary
+                  className="relative list-none cursor-pointer rounded-xl p-2 text-slate-500 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/10 transition [&::-webkit-details-marker]:hidden"
                   aria-label="Notificaciones del sistema"
                 >
                   <Bell size={18} />
                   {alerts.length > 0 && (
                     <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-rose-500 ring-2 ring-white" />
                   )}
-                </button>
-                <div className="invisible absolute right-0 top-11 w-72 rounded-2xl border border-slate-200 bg-white p-3 opacity-0 shadow-xl transition group-hover:visible group-hover:opacity-100 dark:border-white/10 dark:bg-slate-900 z-40">
+                </summary>
+                <div className="absolute right-0 top-11 w-72 max-w-[calc(100vw-2rem)] rounded-2xl border border-slate-200 bg-white p-3 shadow-xl dark:border-white/10 dark:bg-slate-900 z-40">
                   <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
                     Alertas de Bodega
                   </p>
@@ -343,7 +344,7 @@ export function AppShell({
                     <p className="text-xs text-slate-500">Sin alertas de existencias.</p>
                   )}
                 </div>
-              </div>
+              </details>
 
               {/* Usuario activo */}
               {user && (

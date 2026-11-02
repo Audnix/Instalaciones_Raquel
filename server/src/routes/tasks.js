@@ -36,7 +36,7 @@ tasksRouter.get("/my-tasks", async (req, res, next) => {
           title: `Cotización ${row.ProformaNumber} (${row.ClientName})`,
           detail: `Estado: ${row.Status}. Monto: C$ ${Number(row.Total).toLocaleString("es-NI")}. Vence: ${row.ValidUntil ? new Date(row.ValidUntil).toLocaleDateString("es-NI") : "Sin fecha"}`,
           priority: row.Status === "aceptada" ? "alta" : "media",
-          actionUrl: "/ventas",
+          actionUrl: `/ventas#proforma-${encodeURIComponent(row.ProformaNumber)}`,
           actionLabel: row.Status === "aceptada" ? "Facturar pedido" : "Hacer seguimiento"
         });
       }
@@ -57,19 +57,18 @@ tasksRouter.get("/my-tasks", async (req, res, next) => {
           title: `Orden de taller ${row.Code} · ${row.Product}`,
           detail: `Cliente: ${row.Client} · Etapa: ${row.Stage} · Responsable: ${row.Owner}`,
           priority: row.Stage === "corte" ? "alta" : "media",
-          actionUrl: "/produccion",
+          actionUrl: `/produccion#production-${encodeURIComponent(row.Code)}`,
           actionLabel: "Ver en Kanban"
         });
       }
     }
 
     // 3. INVENTARIO / BODEGA
-    if (isSuper || userAreas.includes("inventario") || userAreas.includes("produccion")) {
+    if (isSuper || userAreas.includes("inventario") || userAreas.includes("produccion") || userAreas.includes("compras")) {
       const lowStock = await pool.request().query(`
         SELECT p.Code, p.Name, p.MinQuantity, ISNULL(SUM(l.Quantity), 0) AS OnHand
         FROM dbo.Products p
         LEFT JOIN dbo.InventoryLots l ON l.ProductId = p.ProductId
-        WHERE p.DeletedAt IS NULL
         GROUP BY p.Code, p.Name, p.MinQuantity
         HAVING ISNULL(SUM(l.Quantity), 0) < p.MinQuantity;
       `);
@@ -80,8 +79,8 @@ tasksRouter.get("/my-tasks", async (req, res, next) => {
           title: `Stock bajo mínimo: ${row.Name} (${row.Code})`,
           detail: `Existencia actual: ${row.OnHand} · Mínimo reglamentario: ${row.MinQuantity}`,
           priority: "alta",
-          actionUrl: "/inventario",
-          actionLabel: "Generar reposición"
+          actionUrl: `/inventario#product-${encodeURIComponent(row.Code)}`,
+          actionLabel: "Ver producto"
         });
       }
     }
@@ -101,27 +100,22 @@ tasksRouter.get("/my-tasks", async (req, res, next) => {
           title: `Orden de compra ${row.PurchaseNumber} (${row.SupplierName})`,
           detail: `Monto: C$ ${Number(row.Total).toLocaleString("es-NI")}. Pendiente de recepción física en almacén.`,
           priority: "media",
-          actionUrl: "/compras",
-          actionLabel: "Recibir materiales"
+          actionUrl: `/compras#purchase-${encodeURIComponent(row.PurchaseNumber)}`,
+          actionLabel: "Revisar compra"
         });
       }
     }
 
     // 5. FINANZAS / CONTABILIDAD
     if (isSuper || userAreas.includes("finanzas") || userAreas.includes("contabilidad")) {
-      const pendingEntries = await pool.request().query(`
-        SELECT TOP 5 EntryNumber, Description, Debit, EntryDate
-        FROM dbo.AccountingEntries
-        ORDER BY EntryDate DESC;
-      `);
       tasks.push({
         id: "task-fin-balance",
-        module: "contabilidad",
+        module: isSuper || userAreas.includes("contabilidad") ? "contabilidad" : "finanzas",
         title: "Revisión de balance y comprobación mensual",
         detail: "Verificar cuadre de débitos y créditos con libros auxiliares de inventario y caja.",
         priority: "media",
-        actionUrl: "/contabilidad",
-        actionLabel: "Revisar libros"
+        actionUrl: isSuper || userAreas.includes("contabilidad") ? "/contabilidad" : "/finanzas",
+        actionLabel: isSuper || userAreas.includes("contabilidad") ? "Revisar libros" : "Revisar finanzas"
       });
     }
 

@@ -1,4 +1,5 @@
 import sql from 'mssql';
+import {prepareSaleReceipt,refreshSaleReceivable} from './saleReceipt.js';
 import {CASH_LEDGER_CTE} from './cashLedgerSql.js';
 
 function reject(number,message){throw Object.assign(new Error(message),{number});}
@@ -17,6 +18,7 @@ export function cashRequest(pool,{transaction}={}){
    if(!transaction) await tx.begin();
    const request=()=>new sql.Request(tx);
    try{
+    let receiptSale=null,voidedSaleId=null;
     const lock=async(resource)=>{
      const result=await request().input('Resource',sql.NVarChar(255),resource).query(`DECLARE @r INT;
       EXEC @r=sys.sp_getapplock @Resource=@Resource,@LockMode='Exclusive',@LockOwner='Transaction',@LockTimeout=10000;
@@ -53,11 +55,17 @@ export function cashRequest(pool,{transaction}={}){
        ||!same(old.ResponsibleAppUserId,p.ActorId)||(p.MoveDate&&iso(old.MoveDate)!==iso(p.MoveDate))
        ||(p.SessionId&&!same(old.SessionId,p.SessionId))) reject(50611,'La clave de movimiento ya fue utilizada con otros datos. Revisa el movimiento existente.');
      }else{
+      receiptSale=await prepareSaleReceipt(request,p);
       const session=(await request().input('Account',sql.NVarChar(30),account).query(`SELECT TOP(1) * FROM dbo.CashSessions WITH(UPDLOCK,HOLDLOCK)
        WHERE Account=@Account AND Status=N'abierta'`)).recordset[0];
       if(!session) reject(50572,'Abre una sesion en la cuenta antes de registrar el movimiento.');
       if(p.SessionId&&!same(p.SessionId,session.CashSessionId)) reject(50573,'La sesion seleccionada ya no esta abierta.');
       const today=(await request().query("SELECT CONVERT(VARCHAR(10),SYSDATETIMEOFFSET() AT TIME ZONE 'Central America Standard Time',23) AS date")).recordset[0].date;
+      if(!p.MoveDate){
+       p.MoveDate=today;
+       const dateParameter=parameters.find(([name])=>name==='MoveDate');
+       if(dateParameter)dateParameter[2]=today;else parameters.push(['MoveDate',sql.Date,today]);
+      }
       if(iso(session.SessionDate)!==iso(p.MoveDate||today)) reject(50612,`La sesion abierta corresponde al ${iso(session.SessionDate)} y el movimiento al ${iso(p.MoveDate||today)}. Realiza el arqueo y cierre de la sesion anterior y abre la del dia antes de registrar movimientos.`);
       // El banco tambien necesita vinculo de sesion para que el cierre incluya su movimiento.
       p.SessionId=session.CashSessionId;
@@ -77,13 +85,20 @@ export function cashRequest(pool,{transaction}={}){
      }
     }
     if(procedure==='dbo.usp_AnularMovimientoCaja'){
-     const linked=(await request().input('Id',sql.NVarChar(100),p.CashMoveId).query(`SELECT m.DocumentType,
+     const linked=(await request().input('Id',sql.NVarChar(100),p.CashMoveId).query(`SELECT m.DocumentType,m.SaleId,
       (SELECT COUNT(*) FROM dbo.PayrollPayments p WHERE p.CashMoveId=m.CashMoveId AND p.Status=N'confirmado') AS payments
       FROM dbo.CashMoves m WHERE m.CashMoveId=@Id`)).recordset[0];
+     voidedSaleId=linked?.SaleId??null;
+     if(voidedSaleId)await request().input('Id',sql.NVarChar(100),voidedSaleId).query('SELECT SaleId FROM dbo.Sales WITH(UPDLOCK,HOLDLOCK) WHERE SaleId=@Id');
      if(linked?.payments||linked?.DocumentType==='apertura') reject(50612,'Este movimiento requiere el reverso de su proceso de origen. No puede anularse aisladamente.');
     }
     const req=request();for(const args of parameters) req.input(...args);
     const result=await req.execute(procedure);
+    if(receiptSale&&result.recordset[0]?.Resultado!=='repetida'){
+     await request().input('Id',sql.NVarChar(100),result.recordset[0].CashMoveId).input('SaleId',sql.NVarChar(100),receiptSale.SaleId).query('UPDATE dbo.CashMoves SET SaleId=@SaleId WHERE CashMoveId=@Id');
+     await refreshSaleReceivable(request,receiptSale.SaleId);
+    }
+    if(voidedSaleId)await refreshSaleReceivable(request,voidedSaleId);
     if(procedure==='dbo.usp_AbrirCaja'&&result.recordset[0]?.Resultado!=='repetida'){
      await request().input('Session',sql.NVarChar(100),result.recordset[0].CashSessionId).query(`UPDATE dbo.CashMoves
       SET MoveTime=CONVERT(TIME(0),SYSDATETIMEOFFSET() AT TIME ZONE 'Central America Standard Time')

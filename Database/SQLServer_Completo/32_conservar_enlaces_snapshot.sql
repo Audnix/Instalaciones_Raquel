@@ -33,6 +33,8 @@ BEGIN TRY
         OUTER APPLY (SELECT TOP (1) PurchaseId FROM dbo.Purchases WHERE financeMove.Note LIKE N''%'' + PurchaseNumber + N''%'') AS purchase
         OUTER APPLY (SELECT TOP (1) PayrollRunId FROM dbo.PayrollRuns WHERE financeMove.Note LIKE N''%'' + Period + N''%'') AS payroll
         WHERE financeMove.OperationKey IS NULL;';
+ SET @Before=REPLACE(@Before,CHAR(13)+CHAR(10),CHAR(10));
+ SET @After=REPLACE(@After,CHAR(13)+CHAR(10),CHAR(10));
  IF CHARINDEX(@After,@Definition)=0
  BEGIN
   IF CHARINDEX(@Before,@Definition)=0 THROW 50630,'La sincronizacion difiere del patron revisado (financeMove). No se aplica un reemplazo a ciegas.',1;
@@ -51,6 +53,8 @@ BEGIN TRY
         OUTER APPLY (SELECT TOP (1) PurchaseId FROM dbo.Purchases WHERE cashMove.Concept LIKE N''%'' + PurchaseNumber + N''%'') AS purchase
         OUTER APPLY (SELECT TOP (1) PayrollRunId FROM dbo.PayrollRuns WHERE cashMove.Concept LIKE N''%'' + Period + N''%'') AS payroll
         WHERE cashMove.OperationKey IS NULL;';
+ SET @Before=REPLACE(@Before,CHAR(13)+CHAR(10),CHAR(10));
+ SET @After=REPLACE(@After,CHAR(13)+CHAR(10),CHAR(10));
  IF CHARINDEX(@After,@Definition)=0
  BEGIN
   IF CHARINDEX(@Before,@Definition)=0 THROW 50630,'La sincronizacion difiere del patron revisado (cashMove). No se aplica un reemplazo a ciegas.',1;
@@ -77,6 +81,8 @@ BEGIN TRY
         OUTER APPLY (SELECT TOP (1) PayrollRunId FROM dbo.PayrollRuns WHERE PayrollRunId = accounting.ReferenceId) AS payroll
         OUTER APPLY (SELECT TOP (1) CashMoveId FROM dbo.CashMoves WHERE CashMoveId = accounting.ReferenceId) AS cashMove
         WHERE accounting.OperationKey IS NULL;';
+ SET @Before=REPLACE(@Before,CHAR(13)+CHAR(10),CHAR(10));
+ SET @After=REPLACE(@After,CHAR(13)+CHAR(10),CHAR(10));
  IF CHARINDEX(@After,@Definition)=0
  BEGIN
   IF CHARINDEX(@Before,@Definition)=0 THROW 50630,'La sincronizacion difiere del patron revisado (accounting). No se aplica un reemplazo a ciegas.',1;
@@ -110,6 +116,8 @@ BEGIN TRY
             WHERE m.SaleId = s.SaleId AND m.MoveType = N''entrada'' AND m.MoveState=N''confirmado''
         ) AS cobros
         WHERE s.Status = N''completed'';';
+ SET @Before=REPLACE(@Before,CHAR(13)+CHAR(10),CHAR(10));
+ SET @After=REPLACE(@After,CHAR(13)+CHAR(10),CHAR(10));
  IF CHARINDEX(@After,@Definition)=0
  BEGIN
   IF CHARINDEX(@Before,@Definition)=0 THROW 50630,'La logica de AccountsReceivable difiere del patron revisado.',1;
@@ -142,6 +150,8 @@ BEGIN TRY
             WHERE m.PurchaseId = p.PurchaseId AND m.MoveType = N''salida'' AND m.MoveState=N''confirmado''
         ) AS pagos
         WHERE p.Status=N''received'';';
+ SET @Before=REPLACE(@Before,CHAR(13)+CHAR(10),CHAR(10));
+ SET @After=REPLACE(@After,CHAR(13)+CHAR(10),CHAR(10));
  IF CHARINDEX(@After,@Definition)=0
  BEGIN
   IF CHARINDEX(@Before,@Definition)=0 THROW 50630,'La logica de AccountsPayable difiere del patron revisado.',1;
@@ -151,6 +161,8 @@ BEGIN TRY
  SET @After=N'        DECLARE @IntegrityReceivableDates TABLE(ReceivableId NVARCHAR(100) PRIMARY KEY,DueDate DATE NULL);
         INSERT @IntegrityReceivableDates SELECT ReceivableId,DueDate FROM dbo.AccountsReceivable;
         DELETE FROM dbo.AccountsReceivable;';
+ SET @Before=REPLACE(@Before,CHAR(13)+CHAR(10),CHAR(10));
+ SET @After=REPLACE(@After,CHAR(13)+CHAR(10),CHAR(10));
  IF CHARINDEX(@After,@Definition)=0
  BEGIN
   IF CHARINDEX(@Before,@Definition)=0 THROW 50630,'No se reconoce la preservacion de fechas de AccountsReceivable.',1;
@@ -160,6 +172,8 @@ BEGIN TRY
  SET @After=N'        DECLARE @IntegrityPayableDates TABLE(PayableId NVARCHAR(100) PRIMARY KEY,DueDate DATE NULL);
         INSERT @IntegrityPayableDates SELECT PayableId,DueDate FROM dbo.AccountsPayable;
         DELETE FROM dbo.AccountsPayable;';
+ SET @Before=REPLACE(@Before,CHAR(13)+CHAR(10),CHAR(10));
+ SET @After=REPLACE(@After,CHAR(13)+CHAR(10),CHAR(10));
  IF CHARINDEX(@After,@Definition)=0
  BEGIN
   IF CHARINDEX(@Before,@Definition)=0 THROW 50630,'No se reconoce la preservacion de fechas de AccountsPayable.',1;

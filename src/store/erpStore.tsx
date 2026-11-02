@@ -90,8 +90,20 @@ type StoreValue = {
 
 const StoreContext = createContext<StoreValue | null>(null);
 
-export function ErpProvider({ children }: { children: ReactNode }) {
-  const [db, setDb] = useState<ErpDatabase>(loadDb);
+export const scopedWrites = {
+  datos: ["products"],
+  auditoria: [],
+  produccion: ["production"], inventario: ["lots", "kardex"], finanzas: ["finance", "projections"],
+  proyectos: ["projects"], contabilidad: ["accounting"], costos: [],
+  ventas: ["lots", "kardex", "sales", "proformas", "accounting"], clientes: ["parties"],
+  mercadotecnia: ["albums"], compras: ["lots", "kardex", "purchases", "accounting"], reportes: []
+} as const;
+export type ModuleScope = keyof typeof scopedWrites;
+export function isModuleScope(value: string): value is ModuleScope { return Object.prototype.hasOwnProperty.call(scopedWrites, value); }
+
+export function ErpProvider({ children, scope }: { children: ReactNode; scope?: ModuleScope }) {
+  const endpoint = scope ? `${API_URL}/api/module-state/${scope}` : `${API_URL}/api/state`;
+  const [db, setDb] = useState<ErpDatabase>(() => scope ? emptyDatabase : loadDb());
   const [syncStatus, setSyncStatus] = useState<StoreValue["syncStatus"]>("loading");
   // Revisión (rowversion) del estado en SQL Server: el guardado exige que siga
   // siendo la misma para no sobrescribir cambios de otra sesión (OCC).
@@ -115,8 +127,9 @@ export function ErpProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
+    if (scope) return;
     try { localStorage.setItem(DB_KEY, JSON.stringify({...db, users: db.users.map(({password: _password, ...user}) => user)})); } catch { /* SQL remains authoritative if browser storage is full. */ }
-  }, [db]);
+  }, [db, scope]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -133,7 +146,7 @@ export function ErpProvider({ children }: { children: ReactNode }) {
     }
 
     setSyncStatus("loading");
-    authenticatedFetch(`${API_URL}/api/state`, { signal: controller.signal })
+    authenticatedFetch(endpoint, { signal: controller.signal })
       .then(async (response) => {
         if (!response.ok) throw new Error(`Carga SQL Server: HTTP ${response.status}`);
         return response.json() as Promise<{ state?: Partial<ErpDatabase> | null; revision?: string | null }>;
@@ -150,8 +163,10 @@ export function ErpProvider({ children }: { children: ReactNode }) {
           pending: () => setSaving(true),
           save: async (snapshot) => {
             if (getAuthToken() !== sessionToken) throw Error('La sesión cambió. No se envían cambios pendientes con otra cuenta.');
-            const state = {...snapshot, users: snapshot.users.map(({password: _password, ...user}) => user)};
-            const response = await authenticatedFetch(API_URL + '/api/state', {method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify({state, expectedRevision: revisionRef.current})});
+            const state = scope
+              ? Object.fromEntries(scopedWrites[scope].map(key => [key, snapshot[key]]))
+              : {...snapshot, users: snapshot.users.map(({password: _password, ...user}) => user)};
+            const response = await authenticatedFetch(endpoint, {method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify({state, expectedRevision: revisionRef.current})});
             const body = await response.json().catch(() => ({}));
             if (!response.ok) throw Object.assign(new Error(body.message || 'Guardado SQL: HTTP ' + response.status), {status: response.status});
             if (body.saved !== true || typeof body.revision !== 'string' || !/^0x[0-9a-f]{16}$/i.test(body.revision)) throw Error('Confirmación de guardado incierta. Consulta SQL antes de repetir.');
@@ -175,7 +190,7 @@ export function ErpProvider({ children }: { children: ReactNode }) {
         }
       });
     return () => { controller.abort(); saveQueue.current?.stop(); };
-  }, [sessionToken, reloadGeneration]);
+  }, [sessionToken, reloadGeneration, endpoint, scope]);
 
   useEffect(() => {
     if (syncStatus === 'connected' && synchronizedDbRef.current !== db) saveQueue.current?.enqueue(db);
@@ -189,6 +204,7 @@ export function ErpProvider({ children }: { children: ReactNode }) {
   }, [db]);
 
   const log = useCallback((event: Omit<AuditEvent, "id" | "at" | "hash" | "prevHash">) => {
+    if (scope && !scopedWrites[scope].length) return;
     setDb((prev) => {
       const at = now();
       const prevHash = prev.audit[0]?.hash ?? GENESIS;
@@ -201,7 +217,7 @@ export function ErpProvider({ children }: { children: ReactNode }) {
         ].slice(0, 200)
       };
     });
-  }, []);
+  }, [scope]);
 
   const stockOf = useCallback(
     (productId: string) => db.lots.filter((lot) => lot.productId === productId).reduce((sum, lot) => sum + lot.quantity, 0),

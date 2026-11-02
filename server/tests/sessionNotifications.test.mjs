@@ -28,3 +28,24 @@ test('inicio, cambio de cuenta y cierre notifican la sesión ya almacenada a los
     }
   }
 });
+
+test('actualizar los mismos permisos no reescribe el token ni dispara sincronización entre pestañas', () => {
+  const previous = { window: globalThis.window, localStorage: globalThis.localStorage, sessionStorage: globalThis.sessionStorage };
+  try {
+    let writes = 0; let notifications = 0;
+    const local = storage(); const originalSet = local.setItem;
+    local.setItem = (key, value) => { writes++; originalSet(key, value); };
+    globalThis.localStorage = local; globalThis.sessionStorage = storage();
+    globalThis.window = { dispatchEvent() { notifications++; } };
+    const user = { id: 'contador', hierarchy: 'administrador', areas: ['contabilidad'] };
+    api.saveAuthSession('token', user, true);
+    const initialWrites = writes;
+    api.saveAuthSession('token', user, true);
+    assert.equal(writes, initialWrites); assert.equal(notifications, 1);
+    api.saveAuthSession('token', { ...user, areas: ['finanzas'] }, true);
+    assert.equal(notifications, 2);
+    assert.deepEqual(api.readAuthUser().areas, ['finanzas']);
+  } finally {
+    for (const [key, value] of Object.entries(previous)) { if (value === undefined) delete globalThis[key]; else globalThis[key] = value; }
+  }
+});

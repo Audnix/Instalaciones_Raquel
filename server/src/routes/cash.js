@@ -1,4 +1,5 @@
 import { cashRequest } from "../services/cashTransaction.js";
+import { readSaleBalance } from "../services/saleReceipt.js";
 import { CASH_LEDGER_CTE, CASH_MOVEMENTS_SQL, CASH_SUMMARY_SQL, CASH_SUGGESTED_OPENING_SQL } from "../services/cashLedgerSql.js";
 import { Router } from "express";
 import sql from "mssql";
@@ -357,6 +358,18 @@ cashRouter.post("/sessions/:id/review", requireAuth, requireCashSupervision, asy
     }
     handleCashError(error, res, next);
   }
+});
+
+cashRouter.get('/sale-balance', requireAuth, requireCashRead, async(req,res,next)=>{
+ try{
+  const parsed=z.string().trim().min(1).max(80).safeParse(req.query.reference);
+  if(!parsed.success)return res.status(400).json({message:'Indica una referencia de factura válida.'});
+  const pool=await getDatabase();
+  if(!pool)return res.status(503).json({message:'SQL Server no está disponible.'});
+  const balance=await readSaleBalance(()=>pool.request(),parsed.data);
+  if(!balance)return res.status(404).json({message:'No se encontró una factura confirmada con esa referencia.'});
+  res.json(balance);
+ }catch(error){next(error);}
 });
 
 // -----------------------------------------------------------------------------

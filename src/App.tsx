@@ -2,6 +2,7 @@ import { lazy, Suspense, useCallback, useEffect, useState } from "react";
 import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { useAuth } from "./auth/AuthContext";
+import { ChangePassword } from "./pages/ChangePassword";
 import { Loader } from "./components/Loader";
 import { SplashScreen } from "./components/SplashScreen";
 import { AppShell } from "./layouts/AppShell";
@@ -16,7 +17,7 @@ const InvitationPage = lazy(() => import("./pages/InvitationPage"));
 const MyTasksPage = lazy(() => import("./pages/MyTasksPage"));
 
 export default function App() {
-  const { isAuthenticated, logout } = useAuth();
+  const { isAuthenticated, logout, token, user, sessionReady, sessionError, refreshSession } = useAuth();
   const location = useLocation();
   const isValidate = location.pathname.startsWith("/validar");
   const isAlbum = location.pathname.startsWith("/vitrina");
@@ -72,6 +73,11 @@ export default function App() {
       </Suspense>
     );
   }
+
+  if (token && !sessionReady) {
+    return sessionError ? <main className="grid min-h-screen place-items-center p-6"><section role="alert" className="max-w-md space-y-4"><h1 className="text-xl font-bold">Verificar acceso</h1><p>{sessionError}</p><button type="button" className="rounded-lg bg-brand-600 px-4 py-2 text-white" onClick={() => void refreshSession()}>Reintentar verificación</button><button type="button" className="ml-3 underline" onClick={() => void logout()}>Cerrar sesión</button></section></main> : <Loader label="Verificando sesión y permisos" />;
+  }
+  if (isAuthenticated && user?.mustChangePassword) return <ChangePassword />;
 
   return (
     <>

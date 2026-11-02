@@ -4,9 +4,32 @@ import fs from 'node:fs';
 const root=new URL('../../Database/SQLServer_Completo/',import.meta.url);
 const source=fs.readFileSync(new URL('26_integridad_caja_nomina_pagos.sql',root),'utf8').replaceAll('\r\n','\n');
 const migration=fs.readFileSync(new URL('32_conservar_enlaces_snapshot.sql',root),'utf8');
-const pairs=[...migration.matchAll(/SET @Before=N'((?:''|[^'])*)';\s*SET @After=N'((?:''|[^'])*)';/g)]
- .map(([,before,after])=>[before.replaceAll("''","'"),after.replaceAll("''","'")]);
-function apply(definition){for(const [before,after]of pairs){if(definition.includes(after))continue;if(!definition.includes(before))throw Error('Definicion diferente');definition=definition.replaceAll(before,after);}return definition;}
+const normalize=value=>value.replaceAll('\r\n','\n');
+function readPairs(sql){
+ return [...sql.matchAll(/SET @Before=N'((?:''|[^'])*)';\s*SET @After=N'((?:''|[^'])*)';([\s\S]*?)IF CHARINDEX\(@After,@Definition\)=0/g)]
+  .map(([,before,after,preparation])=>{
+   assert.ok(preparation.includes('SET @Before=REPLACE(@Before,CHAR(13)+CHAR(10),CHAR(10));'));
+   assert.ok(preparation.includes('SET @After=REPLACE(@After,CHAR(13)+CHAR(10),CHAR(10));'));
+   return [normalize(before.replaceAll("''","'")),normalize(after.replaceAll("''","'"))];
+  });
+}
+const pairs=readPairs(migration);
+function apply(definition,patterns=pairs){definition=normalize(definition);for(const [before,after]of patterns){if(definition.includes(after))continue;if(!definition.includes(before))throw Error('Definicion diferente');definition=definition.replaceAll(before,after);}return definition;}
+
+test('el parche normaliza patrones y definicion con archivos LF y CRLF',()=>{
+ assert.ok(migration.includes('SET @Definition=REPLACE(@Definition,CHAR(13)+CHAR(10),CHAR(10));'));
+ const expected=apply(source);
+ for(const sqlEnding of ['\n','\r\n']){
+  const patterns=readPairs(normalize(migration).replaceAll('\n',sqlEnding));
+  assert.equal(patterns.length,7);
+  for(const procedureEnding of ['\n','\r\n']){
+   const patched=apply(source.replaceAll('\n',procedureEnding),patterns);
+   assert.equal(patched,expected);
+   assert.equal(apply(patched,patterns),patched);
+  }
+ }
+});
+
 test('el parche preserva enlaces de caja, contabilidad y finanzas confirmados',()=>{
  assert.equal(pairs.length,7);const patched=apply(source);
  for(const alias of ['cashMove','accounting','financeMove'])assert.ok(patched.includes(`WHERE ${alias}.OperationKey IS NULL;`));

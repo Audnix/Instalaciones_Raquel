@@ -38,6 +38,7 @@ export type ModuleId =
   | "ers";
 
 export type SessionUser = {
+  mustChangePassword?: boolean;
   id: string;
   name: string;
   email: string;

@@ -6,7 +6,7 @@ export const revisionToHex = (value) => Buffer.isBuffer(value) ? `0x${value.toSt
 // La revisión devuelta pertenece a ESTE guardado. El bloqueo se conserva hasta
 // leerla y confirmar; una lectura posterior al COMMIT podría devolver la de otro usuario.
 export async function saveStateSnapshot(pool, payload, expectedRevision, {
-  transaction = new sql.Transaction(pool), request = () => new sql.Request(transaction)
+  transaction = new sql.Transaction(pool), request = () => new sql.Request(transaction), transform
 } = {}) {
   let aborted = false;
   transaction.on('rollback', () => { aborted = true; });
@@ -24,7 +24,9 @@ export async function saveStateSnapshot(pool, payload, expectedRevision, {
         status: 409, code: 'STATE_CONFLICT'
       });
     }
-    validateOperationalChange(JSON.parse(payload), row?.Payload ? JSON.parse(row.Payload) : null);
+    const previous = row?.Payload ? JSON.parse(row.Payload) : null;
+    if (transform) payload = JSON.stringify(transform(JSON.parse(payload), previous));
+    validateOperationalChange(JSON.parse(payload), previous);
     await request().input('payload', sql.NVarChar(sql.MAX), payload)
       .input('ExpectedRevision', sql.VarBinary(8), expectedRevision ? Buffer.from(expectedRevision.slice(2), 'hex') : null)
       .execute('dbo.usp_SaveErpState');

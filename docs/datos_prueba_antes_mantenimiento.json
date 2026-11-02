@@ -1,0 +1,38 @@
+{
+  "database": "Instalaciones Raquel",
+  "capturedAt": "2026-10-31T05:32:56.258Z",
+  "records": [
+    [
+      {
+        "id": "PL-2026-10-Q1",
+        "status": "pago_registrado",
+        "recordedTotal": 120945.69,
+        "net": 120945.69,
+        "classifications": 0
+      },
+      {
+        "id": "pr-2026-10-1",
+        "status": "cerrada",
+        "recordedTotal": 115802.54,
+        "net": 115802.54,
+        "classifications": 0
+      },
+      {
+        "id": "run-test-mvfbrouy",
+        "status": "cerrada",
+        "recordedTotal": 176735.08,
+        "net": 176735.08,
+        "classifications": 0
+      }
+    ],
+    [
+      {
+        "id": "cs-a69c38c4ec6c434580ebbb09a0e4b0e1",
+        "status": "abierta",
+        "currency": "C$",
+        "explanation": null,
+        "expected": 4152.67
+      }
+    ]
+  ]
+}

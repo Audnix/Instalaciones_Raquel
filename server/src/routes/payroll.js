@@ -225,6 +225,9 @@ payrollRouter.post("/runs/:id/transition", requireAuth, requirePayrollManagement
       run: result.recordset[0]
     });
   } catch (err) {
+    if (err.number === 50511) {
+      return res.status(400).json({ code: "PAYROLL_INDEPENDENT_APPROVAL", message: "Esta cuenta preparó o calculó la planilla. Debe aprobarla otra persona autorizada desde su propia cuenta: un superadministrador o administrador de Finanzas o Contabilidad. Abre el mismo período; no necesitas volver a borrador." });
+    }
     if (err.number === 50621 || (err.number >= 50506 && err.number <= 50516) || (err.number >= 50593 && err.number <= 50597)) {
       return res.status(400).json({ code: "PAYROLL_FLOW", message: err.message });
     }

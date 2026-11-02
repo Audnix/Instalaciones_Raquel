@@ -1,3 +1,4 @@
+import { useSessionView } from "../lib/useSessionView";
 import { getApiBaseUrl } from '../lib/apiBase';
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
 import {
@@ -306,20 +307,20 @@ export default function SupplierDirectoryPage() {
   const [saving, setSaving] = useState(false);
 
   // View mode: Table vs Cards
-  const [viewMode, setViewMode] = useState<"table" | "cards">("table");
+  const [viewMode, setViewMode] = useSessionView<"table" | "cards">("viewMode", "table");
 
   // Filters & Search
-  const [query, setQuery] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState("todos");
-  const [specialtyFilter, setSpecialtyFilter] = useState("todos");
-  const [statusFilter, setStatusFilter] = useState("todos");
-  const [reviewFilter, setReviewFilter] = useState("todos");
-  const [alertFilter, setAlertFilter] = useState<"todos" | "alertas" | "pendientes">("todos");
-  const [alertDays, setAlertDays] = useState(30);
-  const [dateField, setDateField] = useState<"createdAt" | "updatedAt" | "nextReviewDate" | "reviewedAt">("createdAt");
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
-  const [sortField, setSortField] = useState("name");
+  const [query, setQuery] = useSessionView("query", "");
+  const [categoryFilter, setCategoryFilter] = useSessionView("categoryFilter", "todos");
+  const [specialtyFilter, setSpecialtyFilter] = useSessionView("specialtyFilter", "todos");
+  const [statusFilter, setStatusFilter] = useSessionView("statusFilter", "todos");
+  const [reviewFilter, setReviewFilter] = useSessionView("reviewFilter", "todos");
+  const [alertFilter, setAlertFilter] = useSessionView<"todos" | "alertas" | "pendientes">("alertFilter", "todos");
+  const [alertDays, setAlertDays] = useSessionView("alertDays", 30);
+  const [dateField, setDateField] = useSessionView<"createdAt" | "updatedAt" | "nextReviewDate" | "reviewedAt">("dateField", "createdAt");
+  const [dateFrom, setDateFrom] = useSessionView("dateFrom", "");
+  const [dateTo, setDateTo] = useSessionView("dateTo", "");
+  const [sortField, setSortField] = useSessionView("sortField", "name");
   const [page, setPage] = useState(1);
   const itemsPerPage = 10;
 
